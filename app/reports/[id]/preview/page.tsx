@@ -1,6 +1,6 @@
-import { use } from "react";
 import Link from "next/link";
 import type { Report } from "@/lib/types";
+import { PrintButton } from "./PrintButton";
 
 async function getReport(id: string): Promise<Report | null> {
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
@@ -47,15 +47,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
           <span>/</span>
           <span>帳票プレビュー</span>
         </div>
-        <button
-          onClick={() => window.print()}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm rounded-lg transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-          </svg>
-          印刷 / PDF保存
-        </button>
+        <PrintButton />
       </div>
 
       {/* Page 1: Main report */}
@@ -63,7 +55,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
         {/* Header */}
         <div className="text-center border-b-2 border-slate-800 pb-4 mb-6">
           <h1 className="text-2xl font-bold text-slate-900">事 故 報 告 書</h1>
-          <p className="text-sm text-slate-500 mt-1">施設管理部</p>
+          <p className="text-sm text-slate-500 mt-1">{report.department || ""}</p>
         </div>
 
         {/* Basic info grid */}

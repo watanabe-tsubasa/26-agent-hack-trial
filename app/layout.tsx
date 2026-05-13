@@ -30,7 +30,7 @@ export default function RootLayout({
               <h1 className="text-base font-bold tracking-wide">
                 事故報告書作成支援システム
               </h1>
-              <p className="text-blue-200 text-xs">施設管理部 / AIエージェント連携</p>
+              <p className="text-blue-200 text-xs">AIエージェント連携</p>
             </div>
             <nav className="ml-auto flex gap-4 text-sm">
               <a href="/" className="text-blue-200 hover:text-white transition-colors">

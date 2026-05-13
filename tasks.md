@@ -90,7 +90,7 @@
 ### 4.4 帳票プレビュー画面（`/reports/[id]/preview`）
 - [x] 1ページ目：基本情報・被害者情報・5W2H・原因・処置・防止対策・本文
 - [x] 2ページ目：写真台帳（最大8枚・番号・場所名・カメラ名・撮影日時）
-- [x] 印刷 / PDF保存ボタン（`window.print()`）
+- [x] 印刷 / PDF保存ボタン（`window.print()`）— `PrintButton.tsx` として Client Component に分離（`page.tsx` は Server Component を維持）
 
 ### 4.5 差分確認画面（`/reports/[id]/diff`）
 - [x] AI出力（赤）→ 修正後（緑）→ 差分サマリー（青）の3段表示
@@ -133,6 +133,9 @@
 - [ ] **処理中画面の独立URL** — `/reports/[id]` 内で status に応じて切り替えているが、ページ遷移時のちらつき改善（Suspense / skeleton）
 - [ ] **スケルトンローディング** — 報告書取得中のレイアウトシフト防止（requirements.md § 15）
 - [ ] **エスカレーターシナリオのデモ確認** — 実際に入力してカメラ画像・報告書内容が切り替わることを確認
+
+### 対応済み
+- [x] **特定部署名の除去** — `施設管理部` / `施設管理担当者` をアプリコード全体から削除。`app/layout.tsx`・`lib/mock-agent.ts`・`lib/report-template.ts`・`app/reports/[id]/preview/page.tsx` を修正（社内全体利用を想定した汎用表記に統一）
 
 ### 優先度：中（品質・UX）
 - [ ] **被害者情報の編集** — 現状は読み取り専用。被害者区分・性別・年齢・被害程度の編集UIを追加
