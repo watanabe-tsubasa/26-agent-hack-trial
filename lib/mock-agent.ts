@@ -2,12 +2,23 @@ import type { CreateReportInput, Report } from "./types";
 import { searchCameraFrames } from "./camera-search";
 import { analyzeImagesMock } from "./mock-vision";
 import { generateReportContent } from "./report-template";
+import { generateAccidentReportWithAI } from "./accident-report-ai";
 
 export async function generateReportDraft(input: CreateReportInput): Promise<Report> {
   const photos = await searchCameraFrames(input);
-
   const imageObservation = await analyzeImagesMock(photos);
-  const content = generateReportContent(input, photos, imageObservation);
+
+  let content;
+  if (process.env.AI_REPORT_GENERATION_ENABLED === "true") {
+    try {
+      content = await generateAccidentReportWithAI({ input, photos, imageObservation });
+    } catch (err) {
+      console.error("AI report generation failed. Falling back to mock.", err);
+      content = generateReportContent(input, photos, imageObservation);
+    }
+  } else {
+    content = generateReportContent(input, photos, imageObservation);
+  }
 
   const now = new Date().toISOString();
   const aiOutput = {

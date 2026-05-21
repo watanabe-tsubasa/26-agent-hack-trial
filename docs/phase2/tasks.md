@@ -102,22 +102,30 @@ Blob パス設計:
 
 ## 9. 動作確認（ユーザー対応）
 
-- [ ] `.env.local` に Storage 接続文字列を設定
-- [ ] `pnpm migrate` で `frame_assets` / `video_assets` テーブル作成
-- [ ] `pnpm seed:frames` でフレーム画像アップロード＋DB登録
-- [ ] Azure Portal で Blob に 4 枚のファイルが存在することを確認
-- [ ] `pnpm worker:report` を再起動
-- [ ] フォームから「天井ボード」シナリオを送信 → 写真台帳に Blob URL の画像が表示されることを確認
-- [ ] フォームから「エスカレーター」シナリオを送信 → 別の 2 枚が表示されることを確認
-- [ ] 概要に両キーワードを含まない場合 → 写真なし（空配列）であることを確認
+- [x] `.env.local` に Storage 接続文字列を設定
+- [x] `pnpm migrate` で `frame_assets` / `video_assets` テーブル作成
+- [x] `pnpm seed:frames` でフレーム画像アップロード＋DB登録
+- [x] Azure Portal で Blob に 4 枚のファイルが存在することを確認
+- [x] ローカル Worker では `.env.local` 読み込み後、画像URL付きドラフト生成を確認済み
+- [x] ローカル生成データは本番Webからも画像表示可能
+- [~] フォームから「天井ボード」シナリオを送信 → ローカルでは確認済み。本番Workerでは未反映（既知課題）
+- [~] フォームから「エスカレーター」シナリオを送信 → 同上
+- [x] 概要に両キーワードを含まない場合 → 写真なし（空配列）であることを確認
+
+### 既知課題（深追いしない）
+
+本番Webから新規作成した場合、Worker側で画像検索経路に入っていない可能性あり。
+原因候補: 本番Workerのenv不足 / 古いrevisionのまま / searchCameraFrames経路に入っていない。
+**本番機能としては将来AI/video-frame-extractor側で再設計予定のため、現時点では深追いしない。**
+詳細: `docs/phase2/issue.md`
 
 ---
 
 ## 10. Container Apps デプロイ（ユーザー対応）
 
-- [ ] Worker イメージを再ビルド・プッシュ（`@azure/storage-blob` 追加分）
-- [ ] Web / Worker 両方に Storage 環境変数を追加
-- [ ] 本番環境での疎通確認
+- [x] Blob Storage + frame_assets 導線はローカルおよびBlobURL直開きで確認済み
+- [~] Worker イメージ再ビルド・プッシュ（`@azure/storage-blob` 追加分）→ Phase 3デプロイ時に合わせて実施予定
+- [~] Web / Worker 両方に Storage 環境変数追加 → Phase 3デプロイ時に合わせて実施予定
 
 ---
 
