@@ -1,21 +1,26 @@
 import { ServiceBusClient } from "@azure/service-bus";
 
-const connectionString = process.env.SERVICE_BUS_CONNECTION_STRING;
-const queueName = process.env.SERVICE_BUS_REPORT_QUEUE_NAME;
+function getServiceBusConfig() {
+  const connectionString = process.env.SERVICE_BUS_CONNECTION_STRING;
+  const queueName = process.env.SERVICE_BUS_REPORT_QUEUE_NAME;
 
-if (!connectionString) {
-  throw new Error("SERVICE_BUS_CONNECTION_STRING is not set");
+  if (!connectionString) {
+    throw new Error("SERVICE_BUS_CONNECTION_STRING is not set");
+  }
+
+  if (!queueName) {
+    throw new Error("SERVICE_BUS_REPORT_QUEUE_NAME is not set");
+  }
+
+  return { connectionString, queueName };
 }
-
-if (!queueName) {
-  throw new Error("SERVICE_BUS_REPORT_QUEUE_NAME is not set");
-}
-
-export const serviceBusClient = new ServiceBusClient(connectionString);
-export const reportQueueName = queueName;
 
 export async function enqueueReportGeneration(reportId: string): Promise<void> {
-  const sender = serviceBusClient.createSender(reportQueueName);
+  const { connectionString, queueName } = getServiceBusConfig();
+
+  const client = new ServiceBusClient(connectionString);
+  const sender = client.createSender(queueName);
+
   try {
     await sender.sendMessages({
       body: { reportId },
@@ -25,5 +30,6 @@ export async function enqueueReportGeneration(reportId: string): Promise<void> {
     });
   } finally {
     await sender.close();
+    await client.close();
   }
 }
