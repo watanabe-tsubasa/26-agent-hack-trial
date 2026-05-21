@@ -91,6 +91,24 @@ export type CreateReportInput = {
   amountImpact: string;
 };
 
+export type FrameAsset = {
+  id: string;
+  videoAssetId: string | null;
+  facilityId: string;
+  cameraId: string;
+  cameraName: string;
+  locationName: string;
+  floorLabel: string | null;
+  capturedAt: string;
+  frameOffsetSeconds: number | null;
+  frameIndex: number | null;
+  blobContainer: string;
+  blobName: string;
+  scenarioTags: string[];
+  description: string | null;
+  createdAt: string;
+};
+
 export type ProcessingStep = {
   label: string;
   status: "pending" | "in_progress" | "completed";

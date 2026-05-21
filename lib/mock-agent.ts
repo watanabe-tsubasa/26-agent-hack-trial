@@ -1,14 +1,10 @@
-import type { CreateReportInput, Photo, Report } from "./types";
-import { fetchCameraImagesMock } from "./mock-camera";
+import type { CreateReportInput, Report } from "./types";
+import { searchCameraFrames } from "./camera-search";
 import { analyzeImagesMock } from "./mock-vision";
 import { generateReportContent } from "./report-template";
 
 export async function generateReportDraft(input: CreateReportInput): Promise<Report> {
-  const photos: Photo[] = await fetchCameraImagesMock({
-    occurredAt: input.occurredAt,
-    location: input.location,
-    summary: input.summary,
-  });
+  const photos = await searchCameraFrames(input);
 
   const imageObservation = await analyzeImagesMock(photos);
   const content = generateReportContent(input, photos, imageObservation);

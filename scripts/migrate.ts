@@ -41,6 +41,52 @@ async function migrate() {
   `);
   console.log("  ✓ table agent_runs");
 
+  await pool.request().query(`
+    if not exists (
+      select 1 from sys.tables where name = 'frame_assets'
+    )
+    create table frame_assets (
+      id                    nvarchar(80)  not null primary key,
+      video_asset_id        nvarchar(80)  null,
+      facility_id           nvarchar(80)  not null,
+      camera_id             nvarchar(80)  not null,
+      camera_name           nvarchar(200) not null,
+      location_name         nvarchar(200) not null,
+      floor_label           nvarchar(50)  null,
+      captured_at           datetime2     not null,
+      frame_offset_seconds  int           null,
+      frame_index           int           null,
+      blob_container        nvarchar(100) not null,
+      blob_name             nvarchar(500) not null,
+      scenario_tags         nvarchar(max) null,
+      description           nvarchar(max) null,
+      created_at            datetime2     not null default sysutcdatetime()
+    )
+  `);
+  console.log("  ✓ table frame_assets");
+
+  await pool.request().query(`
+    if not exists (
+      select 1 from sys.tables where name = 'video_assets'
+    )
+    create table video_assets (
+      id                nvarchar(80)  not null primary key,
+      facility_id       nvarchar(80)  not null,
+      camera_id         nvarchar(80)  not null,
+      camera_name       nvarchar(200) not null,
+      location_name     nvarchar(200) not null,
+      floor_label       nvarchar(50)  null,
+      recorded_start_at datetime2     not null,
+      recorded_end_at   datetime2     not null,
+      blob_container    nvarchar(100) not null,
+      blob_name         nvarchar(500) not null,
+      duration_seconds  int           null,
+      status            nvarchar(50)  not null default 'uploaded',
+      created_at        datetime2     not null default sysutcdatetime()
+    )
+  `);
+  console.log("  ✓ table video_assets");
+
   console.log("migration completed.");
   pool.close();
 }
