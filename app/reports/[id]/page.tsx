@@ -2,13 +2,25 @@
 
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
-import type { ProcessingStep, Report } from "@/lib/types";
+import type { ProcessingStep, Report, ReportStatus } from "@/lib/types";
+
+const PROCESSING_STATUSES: ReportStatus[] = ["queued", "generating_report", "processing"];
 
 // ── Processing screen ────────────────────────────────────────────────────────
 
+const STATUS_LABELS: Record<string, string> = {
+  queued: "AIエージェントの処理待ちです",
+  generating_report: "事故報告書ドラフトを生成しています",
+  waiting_human_review: "完了しました。画面を更新しています...",
+  failed: "処理に失敗しました",
+};
+
 function ProcessingScreen({ reportId }: { reportId: string }) {
   const [steps, setSteps] = useState<ProcessingStep[]>([]);
+  const [statusLabel, setStatusLabel] = useState("処理の開始を待っています...");
   const [done, setDone] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     const poll = async () => {
@@ -16,12 +28,18 @@ function ProcessingScreen({ reportId }: { reportId: string }) {
       if (!res.ok) return;
       const data = await res.json();
       setSteps(data.steps ?? []);
-      if (data.status === "completed") {
-        setDone(true);
+      setStatusLabel(STATUS_LABELS[data.status] ?? data.status);
+      if (!data.isProcessing) {
+        if (data.status === "failed") {
+          setFailed(true);
+          setErrorMessage(data.errorMessage ?? "不明なエラーが発生しました");
+        } else {
+          setDone(true);
+        }
       }
     };
     poll();
-    const timer = setInterval(poll, 600);
+    const timer = setInterval(poll, 1500);
     return () => clearInterval(timer);
   }, [reportId]);
 
@@ -45,41 +63,57 @@ function ProcessingScreen({ reportId }: { reportId: string }) {
               </svg>
             </div>
             <h2 className="text-white font-bold text-xl">AIエージェントが処理中</h2>
-            <p className="text-blue-200 text-sm mt-1">しばらくお待ちください...</p>
+            <p className="text-blue-200 text-sm mt-1">{statusLabel}</p>
           </div>
 
-          <div className="space-y-3">
-            {steps.map((step, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center">
-                  {step.status === "completed" ? (
-                    <div className="w-6 h-6 rounded-full bg-green-400 flex items-center justify-center">
-                      <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+          {failed ? (
+            <div className="bg-red-500/20 border border-red-400/40 rounded-xl p-4 text-center">
+              <p className="text-red-300 font-medium text-sm">処理に失敗しました</p>
+              {errorMessage && <p className="text-red-200 text-xs mt-1">{errorMessage}</p>}
+              <a href="/" className="mt-3 inline-block text-white underline text-sm">トップに戻る</a>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {steps.length > 0 ? steps.map((step, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center">
+                    {step.status === "completed" ? (
+                      <div className="w-6 h-6 rounded-full bg-green-400 flex items-center justify-center">
+                        <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    ) : step.status === "in_progress" ? (
+                      <div className="w-6 h-6 rounded-full bg-white/30 border-2 border-white flex items-center justify-center">
+                        <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                      </div>
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-white/10 border border-white/20" />
+                    )}
+                  </div>
+                  <span className={`text-sm ${step.status === "completed" ? "text-green-300" : step.status === "in_progress" ? "text-white font-medium" : "text-white/40"}`}>
+                    {step.label}
+                  </span>
+                  {step.status === "in_progress" && (
+                    <span className="ml-auto">
+                      <svg className="animate-spin w-4 h-4 text-white/60" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                       </svg>
-                    </div>
-                  ) : step.status === "in_progress" ? (
-                    <div className="w-6 h-6 rounded-full bg-white/30 border-2 border-white flex items-center justify-center">
-                      <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                    </div>
-                  ) : (
-                    <div className="w-6 h-6 rounded-full bg-white/10 border border-white/20" />
+                    </span>
                   )}
                 </div>
-                <span className={`text-sm ${step.status === "completed" ? "text-green-300" : step.status === "in_progress" ? "text-white font-medium" : "text-white/40"}`}>
-                  {step.label}
-                </span>
-                {step.status === "in_progress" && (
-                  <span className="ml-auto">
-                    <svg className="animate-spin w-4 h-4 text-white/60" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
+              )) : (
+                <div className="flex items-center justify-center gap-3 py-4">
+                  <svg className="animate-spin w-5 h-5 text-white/60" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <span className="text-white/60 text-sm">待機中...</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {done && (
             <div className="mt-6 text-center">
@@ -464,7 +498,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
     return <div className="text-center py-12 text-slate-500">{error || "報告書が見つかりません"}</div>;
   }
 
-  if (report.status === "processing") {
+  if (PROCESSING_STATUSES.includes(report.status)) {
     return <ProcessingScreen reportId={id} />;
   }
 

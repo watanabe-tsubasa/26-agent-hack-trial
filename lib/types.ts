@@ -1,4 +1,12 @@
-export type ReportStatus = "processing" | "review" | "updated" | "confirmed";
+export type ReportStatus =
+  | "processing"
+  | "review"
+  | "updated"
+  | "confirmed"
+  | "queued"
+  | "generating_report"
+  | "waiting_human_review"
+  | "failed";
 
 export type Victim = {
   hasVictim: boolean;
