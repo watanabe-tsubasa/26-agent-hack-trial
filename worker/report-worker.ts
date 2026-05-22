@@ -10,7 +10,11 @@ import {
   parseReportGenerationMessage,
 } from "../lib/job-messages";
 import { runPromptImprovementJob } from "../lib/prompt-improvement-processor";
-import { markPromptImprovementRunRunning } from "../lib/prompt-improvement-run-repository";
+import {
+  getActivePromptImprovementRun,
+  markPromptImprovementRunRunning,
+  markPromptImprovementRunSuperseded,
+} from "../lib/prompt-improvement-run-repository";
 
 const connectionString = process.env.SERVICE_BUS_CONNECTION_STRING;
 const reportQueueName = process.env.SERVICE_BUS_REPORT_QUEUE_NAME;
@@ -58,6 +62,20 @@ async function handlePromptImprovementMessage(body: unknown): Promise<void> {
   }
 
   const { runId, locationKey } = parsed;
+  console.log(`[prompt-improvement:${runId}] received locationKey=${locationKey}`);
+
+  const activeRun = await getActivePromptImprovementRun(locationKey);
+  if (!activeRun || activeRun.id !== runId) {
+    const reason = activeRun
+      ? `newer active run exists: ${activeRun.id}`
+      : "no active run for this locationKey";
+    console.warn(
+      `[prompt-improvement:${runId}] superseded locationKey=${locationKey} reason="${reason}"`
+    );
+    await markPromptImprovementRunSuperseded(runId, reason);
+    return;
+  }
+
   console.log(`[prompt-improvement:${runId}] start locationKey=${locationKey}`);
 
   try {

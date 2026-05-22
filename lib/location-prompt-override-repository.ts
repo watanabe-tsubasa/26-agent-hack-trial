@@ -182,6 +182,69 @@ export async function updateLocationPromptOverride({
   return updated;
 }
 
+export async function archiveOlderDraftLocationPromptOverrides({
+  locationKey,
+  keepId,
+}: {
+  locationKey: string;
+  keepId: string;
+}): Promise<number> {
+  const pool = await getDbPool();
+
+  const candidatesResult = await pool
+    .request()
+    .input("locationKey", sql.NVarChar, locationKey)
+    .input("keepId", sql.NVarChar, keepId)
+    .query<{ id: string; status: string; source: string }>(`
+      select id, status, source
+      from location_prompt_overrides
+      where location_key = @locationKey
+        and source = 'ai_proposed'
+        and status = 'draft'
+        and id <> @keepId
+    `);
+
+  console.log(
+    `[archiveOlderDraft] locationKey=${locationKey} keepId=${keepId} candidates=${candidatesResult.recordset.length}`,
+    candidatesResult.recordset.map((r) => r.id)
+  );
+
+  if (candidatesResult.recordset.length === 0) {
+    const debugAll = await pool
+      .request()
+      .input("locationKey", sql.NVarChar, locationKey)
+      .query<{ id: string; status: string; source: string }>(`
+        select id, status, source
+        from location_prompt_overrides
+        where location_key = @locationKey
+      `);
+    console.log(
+      `[archiveOlderDraft] no candidates found. all overrides for locationKey=${locationKey}:`,
+      debugAll.recordset
+    );
+    return 0;
+  }
+
+  const result = await pool
+    .request()
+    .input("locationKey", sql.NVarChar, locationKey)
+    .input("keepId", sql.NVarChar, keepId)
+    .query(`
+      update location_prompt_overrides
+      set status = 'archived'
+      where location_key = @locationKey
+        and source = 'ai_proposed'
+        and status = 'draft'
+        and id <> @keepId
+    `);
+
+  const rowsAffected = result.rowsAffected[0] ?? 0;
+  console.log(
+    `[archiveOlderDraft] locationKey=${locationKey} keepId=${keepId} rowsAffected=${rowsAffected}`
+  );
+  return rowsAffected;
+}
+
 export async function listLocationPromptOverrides(
   locationKey?: string
 ): Promise<LocationPromptOverride[]> {

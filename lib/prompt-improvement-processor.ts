@@ -3,7 +3,10 @@ import {
   buildCorrectionSummary,
   generateLocationPromptOverride,
 } from "./generate-location-prompt-override";
-import { createDraftLocationPromptOverride } from "./location-prompt-override-repository";
+import {
+  archiveOlderDraftLocationPromptOverrides,
+  createDraftLocationPromptOverride,
+} from "./location-prompt-override-repository";
 import {
   completePromptImprovementRun,
   failPromptImprovementRun,
@@ -61,6 +64,16 @@ export async function runPromptImprovementJob({
       source: "ai_proposed",
       analysisJson,
     });
+
+    const archivedCount = await archiveOlderDraftLocationPromptOverrides({
+      locationKey,
+      keepId: overrideId,
+    });
+    if (archivedCount > 0) {
+      console.log(
+        `[prompt-improvement:${runId}] archived ${archivedCount} older ai_proposed draft(s)`
+      );
+    }
 
     await completePromptImprovementRun({
       id: runId,

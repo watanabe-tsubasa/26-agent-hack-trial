@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { createPromptImprovementRun } from "@/lib/prompt-improvement-run-repository";
+import { createQueuedPromptImprovementRunIfNotExists } from "@/lib/prompt-improvement-run-repository";
 import { enqueuePromptImprovement } from "@/lib/service-bus";
 
 export async function POST(req: NextRequest) {
@@ -9,7 +9,20 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "locationKey is required" }, { status: 400 });
   }
 
-  const runId = await createPromptImprovementRun({ locationKey });
+  const { runId, alreadyRunning } =
+    await createQueuedPromptImprovementRunIfNotExists(locationKey);
+
+  if (alreadyRunning) {
+    return Response.json(
+      {
+        runId,
+        locationKey,
+        status: "queued",
+        alreadyRunning: true,
+      },
+      { status: 200 }
+    );
+  }
 
   try {
     await enqueuePromptImprovement({ runId, locationKey });
@@ -22,7 +35,12 @@ export async function POST(req: NextRequest) {
   }
 
   return Response.json(
-    { runId, locationKey, status: "queued" },
+    {
+      runId,
+      locationKey,
+      status: "queued",
+      alreadyRunning: false,
+    },
     { status: 202 }
   );
 }

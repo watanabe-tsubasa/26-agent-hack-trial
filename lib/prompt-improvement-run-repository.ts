@@ -5,7 +5,8 @@ export type PromptImprovementRunStatus =
   | "queued"
   | "running"
   | "completed"
-  | "failed";
+  | "failed"
+  | "superseded";
 
 export type PromptImprovementRun = {
   id: string;
@@ -63,6 +64,106 @@ export async function createPromptImprovementRun({
     `);
 
   return id;
+}
+
+export type CreateIfNotExistsResult = {
+  runId: string;
+  alreadyRunning: boolean;
+};
+
+export async function createQueuedPromptImprovementRunIfNotExists(
+  locationKey: string
+): Promise<CreateIfNotExistsResult> {
+  const pool = await getDbPool();
+  const tx = new sql.Transaction(pool);
+  await tx.begin(sql.ISOLATION_LEVEL.SERIALIZABLE);
+
+  try {
+    const existing = await new sql.Request(tx)
+      .input("locationKey", sql.NVarChar, locationKey)
+      .query<{ id: string }>(`
+        select top 1 id
+        from prompt_improvement_runs with (updlock, holdlock)
+        where location_key = @locationKey
+          and status in ('queued', 'running')
+        order by created_at desc
+      `);
+
+    if (existing.recordset.length > 0) {
+      await tx.commit();
+      return { runId: existing.recordset[0].id, alreadyRunning: true };
+    }
+
+    const id = `pir_${randomUUID()}`;
+    await new sql.Request(tx)
+      .input("id", sql.NVarChar, id)
+      .input("locationKey", sql.NVarChar, locationKey)
+      .query(`
+        insert into prompt_improvement_runs (id, location_key, status)
+        values (@id, @locationKey, 'queued')
+      `);
+
+    await tx.commit();
+    return { runId: id, alreadyRunning: false };
+  } catch (err) {
+    await tx.rollback().catch(() => undefined);
+    throw err;
+  }
+}
+
+export async function getActivePromptImprovementRun(
+  locationKey: string
+): Promise<PromptImprovementRun | null> {
+  const pool = await getDbPool();
+  const result = await pool
+    .request()
+    .input("locationKey", sql.NVarChar, locationKey)
+    .query<Row>(`
+      select top 1 id, location_key, status, input_correction_count, summary_json,
+             proposed_override_id, error_message, created_at, completed_at
+      from prompt_improvement_runs
+      where location_key = @locationKey
+        and status in ('queued', 'running')
+      order by created_at desc
+    `);
+  if (result.recordset.length === 0) return null;
+  return rowToRun(result.recordset[0]);
+}
+
+export async function getLatestPromptImprovementRun(
+  locationKey: string
+): Promise<PromptImprovementRun | null> {
+  const pool = await getDbPool();
+  const result = await pool
+    .request()
+    .input("locationKey", sql.NVarChar, locationKey)
+    .query<Row>(`
+      select top 1 id, location_key, status, input_correction_count, summary_json,
+             proposed_override_id, error_message, created_at, completed_at
+      from prompt_improvement_runs
+      where location_key = @locationKey
+      order by created_at desc
+    `);
+  if (result.recordset.length === 0) return null;
+  return rowToRun(result.recordset[0]);
+}
+
+export async function markPromptImprovementRunSuperseded(
+  id: string,
+  reason?: string
+): Promise<void> {
+  const pool = await getDbPool();
+  await pool
+    .request()
+    .input("id", sql.NVarChar, id)
+    .input("errorMessage", sql.NVarChar, reason ?? null)
+    .query(`
+      update prompt_improvement_runs
+      set status = 'superseded',
+          error_message = @errorMessage,
+          completed_at = sysutcdatetime()
+      where id = @id
+    `);
 }
 
 export async function markPromptImprovementRunRunning(id: string): Promise<void> {

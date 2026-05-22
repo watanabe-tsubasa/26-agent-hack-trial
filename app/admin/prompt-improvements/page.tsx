@@ -284,7 +284,7 @@ function ActiveBlock({ override }: { override: Override | null }) {
   );
 }
 
-type RunStatus = "queued" | "running" | "completed" | "failed";
+type RunStatus = "queued" | "running" | "completed" | "failed" | "superseded";
 type Run = {
   id: string;
   locationKey: string;
@@ -298,13 +298,18 @@ type Run = {
 
 const POLL_INTERVAL_MS = 3000;
 
+function isInFlight(run: Run | null): boolean {
+  if (!run) return false;
+  return run.status === "queued" || run.status === "running";
+}
+
 export default function PromptImprovementsPage() {
   const [overrides, setOverrides] = useState<Override[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [generating, setGenerating] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [genMessage, setGenMessage] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
-  const [activeRun, setActiveRun] = useState<Run | null>(null);
+  const [latestRun, setLatestRun] = useState<Run | null>(null);
 
   const fetchList = useCallback(async () => {
     setLoading(true);
@@ -324,15 +329,29 @@ export default function PromptImprovementsPage() {
     }
   }, []);
 
+  const fetchLatestRun = useCallback(async () => {
+    try {
+      const res = await fetch(
+        `/api/prompt-improvement-runs/latest?locationKey=${encodeURIComponent(LOCATION_KEY)}`,
+        { cache: "no-store" }
+      );
+      const data = await res.json();
+      if (!res.ok) return;
+      setLatestRun((data.run as Run | null) ?? null);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   useEffect(() => {
     fetchList();
-  }, [fetchList]);
+    fetchLatestRun();
+  }, [fetchList, fetchLatestRun]);
 
   useEffect(() => {
-    if (!activeRun) return;
-    if (activeRun.status === "completed" || activeRun.status === "failed") return;
+    if (!isInFlight(latestRun)) return;
+    const runId = latestRun!.id;
 
-    const runId = activeRun.id;
     const timer = setInterval(async () => {
       try {
         const res = await fetch(`/api/prompt-improvement-runs/${runId}`, {
@@ -341,13 +360,12 @@ export default function PromptImprovementsPage() {
         const data = await res.json();
         if (!res.ok) return;
         const run = data.run as Run;
-        setActiveRun(run);
+        setLatestRun(run);
         if (run.status === "completed") {
           setGenMessage({
             kind: "ok",
             text: `改善案 draft を作成しました（修正履歴 ${run.inputCorrectionCount ?? 0} 件を分析）`,
           });
-          setGenerating(false);
           await fetchList();
         } else if (run.status === "failed") {
           const msg = run.errorMessage ?? "改善案生成に失敗しました";
@@ -359,20 +377,23 @@ export default function PromptImprovementsPage() {
           } else {
             setGenMessage({ kind: "err", text: msg });
           }
-          setGenerating(false);
+        } else if (run.status === "superseded") {
+          setGenMessage({
+            kind: "err",
+            text: "この run は新しい run に置き換えられました（superseded）。",
+          });
         }
       } catch {
-        // polling 中の transient error は無視
+        // ignore transient errors
       }
     }, POLL_INTERVAL_MS);
 
     return () => clearInterval(timer);
-  }, [activeRun, fetchList]);
+  }, [latestRun, fetchList]);
 
   const handleGenerate = async () => {
-    setGenerating(true);
+    setSubmitting(true);
     setGenMessage(null);
-    setActiveRun(null);
     try {
       const res = await fetch(`/api/admin/run-prompt-improvement`, {
         method: "POST",
@@ -383,7 +404,7 @@ export default function PromptImprovementsPage() {
       if (!res.ok) {
         throw new Error(data?.error ?? "改善案生成のキューイングに失敗しました");
       }
-      setActiveRun({
+      const placeholder: Run = {
         id: data.runId,
         locationKey: data.locationKey,
         status: "queued",
@@ -392,14 +413,25 @@ export default function PromptImprovementsPage() {
         errorMessage: null,
         createdAt: new Date().toISOString(),
         completedAt: null,
-      });
-      setGenMessage({
-        kind: "ok",
-        text: `改善案生成を受け付けました（runId: ${data.runId}）。完了まで待機しています...`,
-      });
+      };
+      setLatestRun(placeholder);
+      if (data.alreadyRunning) {
+        setGenMessage({
+          kind: "ok",
+          text: `既に処理中の改善案生成があります（runId: ${data.runId}）。完了をお待ちください。`,
+        });
+      } else {
+        setGenMessage({
+          kind: "ok",
+          text: `改善案生成を受け付けました（runId: ${data.runId}）。完了まで待機しています...`,
+        });
+      }
+      // 直後に latest を取りに行って status を同期
+      await fetchLatestRun();
     } catch (err) {
       setGenMessage({ kind: "err", text: err instanceof Error ? err.message : String(err) });
-      setGenerating(false);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -408,7 +440,10 @@ export default function PromptImprovementsPage() {
   };
 
   const active = overrides.find((o) => o.status === "active") ?? null;
-  const drafts = overrides.filter((o) => o.status === "draft");
+  const latestDraft =
+    overrides
+      .filter((o) => o.status === "draft")
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))[0] ?? null;
   const archived = overrides.filter((o) => o.status === "archived");
 
   return (
@@ -440,18 +475,26 @@ export default function PromptImprovementsPage() {
           <button
             type="button"
             onClick={handleGenerate}
-            disabled={generating}
+            disabled={loading || submitting || isInFlight(latestRun)}
             className="bg-blue-700 hover:bg-blue-800 disabled:bg-blue-400 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2"
           >
-            {generating ? (
+            {loading ? (
               <>
                 <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                {activeRun?.status === "running"
+                状態を確認中...
+              </>
+            ) : submitting || isInFlight(latestRun) ? (
+              <>
+                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                {latestRun?.status === "running"
                   ? "Worker が処理中..."
-                  : activeRun?.status === "queued"
+                  : latestRun?.status === "queued"
                   ? "キュー投入済み・処理待ち..."
                   : "受付中..."}
               </>
@@ -461,10 +504,13 @@ export default function PromptImprovementsPage() {
           </button>
         </div>
 
-        {activeRun && (
-          <div className="text-xs text-slate-500 flex items-center gap-2 font-mono">
-            <span>runId: {activeRun.id}</span>
-            <span>status: {activeRun.status}</span>
+        {latestRun && (
+          <div className="text-xs text-slate-500 flex items-center gap-3 font-mono">
+            <span>runId: {latestRun.id}</span>
+            <span>status: {latestRun.status}</span>
+            {latestRun.inputCorrectionCount !== null && (
+              <span>corrections: {latestRun.inputCorrectionCount}</span>
+            )}
           </div>
         )}
 
@@ -494,25 +540,24 @@ export default function PromptImprovementsPage() {
 
       <section className="space-y-2">
         <h3 className="text-sm font-bold text-slate-600 uppercase tracking-wide">
-          改善案 draft（{drafts.length} 件）
+          改善案 draft
         </h3>
+        <p className="text-xs text-slate-500">
+          表示されるのは最新の draft 1件です。過去の draft は新しい改善案を生成すると自動で archived になります。
+        </p>
         {loading ? (
           <div className="text-sm text-slate-500">読み込み中...</div>
-        ) : drafts.length === 0 ? (
+        ) : !latestDraft ? (
           <div className="bg-white border border-dashed border-slate-300 rounded-xl p-6 text-center text-sm text-slate-500">
             draft はまだありません。上の「改善案を生成」ボタンを押してください。
           </div>
         ) : (
-          <div className="space-y-3">
-            {drafts.map((d) => (
-              <DraftCard
-                key={d.id}
-                override={d}
-                onSaved={handleDraftSaved}
-                onApproved={() => fetchList()}
-              />
-            ))}
-          </div>
+          <DraftCard
+            key={latestDraft.id}
+            override={latestDraft}
+            onSaved={handleDraftSaved}
+            onApproved={() => fetchList()}
+          />
         )}
       </section>
 
