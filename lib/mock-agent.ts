@@ -11,7 +11,12 @@ export async function generateReportDraft(input: CreateReportInput): Promise<Rep
   let content;
   if (process.env.AI_REPORT_GENERATION_ENABLED === "true") {
     try {
-      content = await generateAccidentReportWithAI({ input, photos, imageObservation });
+      content = await generateAccidentReportWithAI({
+        input,
+        photos,
+        imageObservation,
+        locationKey: input.facilityId,
+      });
     } catch (err) {
       console.error("AI report generation failed. Falling back to mock.", err);
       content = generateReportContent(input, photos, imageObservation);

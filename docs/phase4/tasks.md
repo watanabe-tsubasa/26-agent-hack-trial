@@ -88,26 +88,21 @@ status = confirmed
 
 ---
 
-## 8. 動作確認（ユーザー対応）
+## 8. 動作確認（実施済み）
 
-- [ ] 報告書を新規作成 → AIドラフトを確認
-- [ ] いくつかのフィールドを修正して「修正内容を保存」
-- [ ] 「この内容で確定」を押す
-- [ ] `GET /api/reports/:id/corrections` を呼んで diff が返ることを確認
-
-```sql
-select top 10 id, report_id, diff_json, created_at
-from report_corrections order by created_at desc;
-```
-
-- [ ] 修正せず確定した場合 → `report_corrections` に保存されない（diff 件数 0）
+- [x] 報告書を新規作成 → AIドラフトを確認
+- [x] いくつかのフィールドを修正して「修正内容を保存」
+- [x] 「この内容で確定」を押す
+- [x] `GET /api/reports/:id/corrections` を呼んで diff が返ることを確認
+- [x] `report_corrections` テーブルに差分レコードが記録されることを確認
 
 ---
 
-## 9. Container Apps デプロイ（ユーザー対応）
+## 9. Container Apps デプロイ（実施済み）
 
-- [ ] `git push origin main` でデプロイ（CI/CD 自動実行）
-  - confirm ルートの try/catch と corrections API が本番に反映される
+- [x] `git push origin main` でデプロイ（CI/CD 自動実行）
+  - confirm ルートの try/catch と corrections API が本番に反映
+- [x] 本番環境での差分記録を確認済み
 
 ---
 

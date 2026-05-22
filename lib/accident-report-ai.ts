@@ -1,24 +1,42 @@
 import { getAzureOpenAIClient } from "./azure-openai";
 import { generatedContentJsonSchema, generatedContentSchema } from "./accident-report-schema";
 import { ACCIDENT_REPORT_SYSTEM_PROMPT } from "./accident-report-prompt";
+import { getActiveLocationPromptOverride } from "./location-prompt-override-repository";
 import type { CreateReportInput, Photo } from "./types";
 
 type GenerateArgs = {
   input: CreateReportInput;
   photos: Photo[];
   imageObservation: string;
+  locationKey?: string;
 };
 
 export async function generateAccidentReportWithAI({
   input,
   photos,
   imageObservation,
+  locationKey,
 }: GenerateArgs) {
   const client = getAzureOpenAIClient();
   const deployment = process.env.AZURE_OPENAI_DEPLOYMENT_NAME;
 
   if (!deployment) throw new Error("AZURE_OPENAI_DEPLOYMENT_NAME is not set");
-  
+
+  let systemPrompt = ACCIDENT_REPORT_SYSTEM_PROMPT;
+  if (locationKey) {
+    try {
+      const override = await getActiveLocationPromptOverride(locationKey);
+      if (override) {
+        systemPrompt = [
+          ACCIDENT_REPORT_SYSTEM_PROMPT,
+          `\n# 店舗・施設別の補正ルール\n${override.overrideText}`,
+        ].join("\n");
+      }
+    } catch (err) {
+      console.error("Failed to fetch location prompt override (using base prompt):", err);
+    }
+  }
+
   const payload = {
     accidentInput: input,
     imageObservation,
@@ -32,7 +50,7 @@ export async function generateAccidentReportWithAI({
   const response = await client.responses.create({
     model: deployment,
     // temperature: 0.2,
-    instructions: ACCIDENT_REPORT_SYSTEM_PROMPT,
+    instructions: systemPrompt,
     input: [
       {
         role: "user",
@@ -47,11 +65,11 @@ export async function generateAccidentReportWithAI({
     text: {
       format: {
         type: "json_schema",
-          name: "accident_report_content",
-          strict: true,
-          schema: generatedContentJsonSchema,
+        name: "accident_report_content",
+        strict: true,
+        schema: generatedContentJsonSchema,
       },
-    }
+    },
   });
 
   const raw = response.output_text;

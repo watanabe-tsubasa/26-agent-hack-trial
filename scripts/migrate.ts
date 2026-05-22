@@ -103,6 +103,42 @@ async function migrate() {
   `);
   console.log("  ✓ table report_corrections");
 
+  await pool.request().query(`
+    if not exists (
+      select 1 from sys.tables where name = 'location_prompt_overrides'
+    )
+    create table location_prompt_overrides (
+      id            nvarchar(64)   not null primary key,
+      location_key  nvarchar(128)  not null,
+      title         nvarchar(200)  not null,
+      override_text nvarchar(max)  not null,
+      source        nvarchar(32)   not null,
+      status        nvarchar(32)   not null default 'draft',
+      analysis_json nvarchar(max)  null,
+      created_at    datetime2      not null default sysutcdatetime(),
+      approved_at   datetime2      null
+    )
+  `);
+  console.log("  ✓ table location_prompt_overrides");
+
+  await pool.request().query(`
+    if not exists (
+      select 1 from sys.tables where name = 'prompt_improvement_runs'
+    )
+    create table prompt_improvement_runs (
+      id                     nvarchar(64)   not null primary key,
+      location_key           nvarchar(128)  not null,
+      status                 nvarchar(32)   not null,
+      input_correction_count int            null,
+      summary_json           nvarchar(max)  null,
+      proposed_override_id   nvarchar(64)   null,
+      created_at             datetime2      not null default sysutcdatetime(),
+      completed_at           datetime2      null,
+      error_message          nvarchar(max)  null
+    )
+  `);
+  console.log("  ✓ table prompt_improvement_runs");
+
   console.log("migration completed.");
   pool.close();
 }

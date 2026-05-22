@@ -89,6 +89,7 @@ export type CreateReportInput = {
   hasVictim: boolean;
   recoveryStatus: string;
   amountImpact: string;
+  facilityId?: string;
 };
 
 export type FrameAsset = {
