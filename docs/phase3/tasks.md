@@ -15,9 +15,9 @@
 ## 2. Azure OpenAI クライアント
 
 - [x] `lib/azure-openai.ts` — Azure OpenAI endpoint 向け `OpenAI` クライアントファクトリ
-  - 環境変数: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_API_VERSION`
-  - baseURL を `/openai/deployments` 形式に構築
-  - `defaultQuery` に `api-version` を付与
+  - 環境変数: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`
+  - baseURL を `${endpoint}/openai/v1/` 形式に構築（Responses API 用）
+  - ※当初 `/openai/deployments` + `defaultQuery: api-version` 構成だったが、Responses API 利用のため `/openai/v1/` に変更
 
 ---
 
@@ -51,9 +51,13 @@ AI が生成する:
 
 - [x] `lib/accident-report-ai.ts` — `generateAccidentReportWithAI`
   - 引数: `{ input: CreateReportInput, photos: Photo[], imageObservation: string }`
-  - `response_format: { type: "json_schema", json_schema: { strict: true, schema: ... } }` で構造化出力
+  - **Responses API** (`client.responses.create()`) を使用
+    - `instructions` にシステムプロンプトを渡す
+    - `text.format.type = "json_schema"` で構造化出力指定
+    - レスポンスは `response.output_text` で取得
   - レスポンスを `generatedContentSchema.parse()` で再検証
   - 戻り値は `GeneratedContent`（report-template.ts の戻り値型と同一）
+  - ※当初 Chat Completions API (`client.chat.completions.create()`) だったが、Responses API に変更
 
 ---
 
@@ -74,27 +78,26 @@ AI が生成する:
 
 ## 7. 動作確認（ユーザー対応）
 
-- [ ] `.env.local` に Azure OpenAI 環境変数を追加
+- [x] `.env.local` に Azure OpenAI 環境変数を追加
 
 ```env
 AZURE_OPENAI_ENDPOINT="https://<your-resource>.openai.azure.com"
 AZURE_OPENAI_API_KEY="..."
 AZURE_OPENAI_DEPLOYMENT_NAME="gpt-4o-mini"   # Azure上で作ったデプロイ名
-AZURE_OPENAI_API_VERSION="2024-10-21"
 AI_REPORT_GENERATION_ENABLED="true"
 ```
 
-- [ ] `pnpm worker:report` を再起動（`AI_REPORT_GENERATION_ENABLED=true` で起動）
-- [ ] フォームから事故内容を送信 → Worker ログで `AI report generation` の呼び出しを確認
-- [ ] フロント上でAI生成の報告書内容が表示されることを確認
-- [ ] Azure OpenAI キーを意図的に間違え、フォールバックが動くことを確認
-- [ ] `AI_REPORT_GENERATION_ENABLED` を `"false"` にしてモック動作に戻ることを確認
+- [x] `pnpm worker:report` を再起動（`AI_REPORT_GENERATION_ENABLED=true` で起動）
+- [x] フォームから事故内容を送信 → Worker ログで `AI report generation` の呼び出しを確認
+- [x] フロント上でAI生成の報告書内容が表示されることを確認
+- [ ] Azure OpenAI キーを意図的に間違え、フォールバックが動くことを確認（任意）
+- [ ] `AI_REPORT_GENERATION_ENABLED` を `"false"` にしてモック動作に戻ることを確認（任意）
 
 ---
 
 ## 8. Container Apps デプロイ（ユーザー対応）
 
-- [ ] Worker Container App にシークレット + 環境変数を追加
+- [x] Worker Container App にシークレット + 環境変数を追加
 
 ```bash
 az containerapp secret set \
@@ -109,15 +112,12 @@ az containerapp update \
     AI_REPORT_GENERATION_ENABLED=true \
     AZURE_OPENAI_ENDPOINT="$AZURE_OPENAI_ENDPOINT" \
     AZURE_OPENAI_API_KEY=secretref:azure-openai-api-key \
-    AZURE_OPENAI_DEPLOYMENT_NAME="$AZURE_OPENAI_DEPLOYMENT_NAME" \
-    AZURE_OPENAI_API_VERSION="2024-10-21"
+    AZURE_OPENAI_DEPLOYMENT_NAME="$AZURE_OPENAI_DEPLOYMENT_NAME"
 ```
 
-> `az containerapp update` が API version 問題で詰まる場合は Azure Portal から環境変数を手動追加してもよい。
-
-- [ ] Worker イメージを再ビルド・プッシュ（`openai` パッケージ追加分）
-  - Phase 2 の `@azure/storage-blob` 追加分もここで一緒にビルド
-- [ ] 本番Workerで AI 生成が動くことを確認
+- [x] Worker イメージを再ビルド・プッシュ（`openai` パッケージ追加分）
+  - Phase 2 の `@azure/storage-blob` 追加分もここで一緒に対応
+- [x] 本番Workerで AI 生成が動くことを確認
 
 ---
 

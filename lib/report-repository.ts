@@ -125,6 +125,28 @@ export async function getReportStatus(
   return result.recordset[0] ?? null;
 }
 
+export async function getReportDrafts(
+  reportId: string
+): Promise<{ aiDraftJson: string | null; userDraftJson: string | null }> {
+  const pool = await getDbPool();
+
+  const result = await pool
+    .request()
+    .input("id", sql.NVarChar, reportId)
+    .query(`
+      select top 1 ai_draft_json, user_draft_json
+      from reports
+      where id = @id
+    `);
+
+  const row = result.recordset[0];
+  if (!row) return { aiDraftJson: null, userDraftJson: null };
+  return {
+    aiDraftJson: row.ai_draft_json ?? null,
+    userDraftJson: row.user_draft_json ?? null,
+  };
+}
+
 export async function getInputJson(reportId: string): Promise<CreateReportInput | null> {
   const pool = await getDbPool();
 

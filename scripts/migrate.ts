@@ -87,6 +87,22 @@ async function migrate() {
   `);
   console.log("  ✓ table video_assets");
 
+  await pool.request().query(`
+    if not exists (
+      select 1 from sys.tables where name = 'report_corrections'
+    )
+    create table report_corrections (
+      id               nvarchar(64)  not null primary key,
+      report_id        nvarchar(64)  not null,
+      ai_draft_json    nvarchar(max) not null,
+      user_draft_json  nvarchar(max) not null,
+      diff_json        nvarchar(max) not null,
+      correction_reason nvarchar(max) null,
+      created_at       datetime2     not null default sysutcdatetime()
+    )
+  `);
+  console.log("  ✓ table report_corrections");
+
   console.log("migration completed.");
   pool.close();
 }
