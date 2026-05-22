@@ -49,7 +49,7 @@ export default function NewReportPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
-        <h2 className="text-xl font-bold text-slate-800">新規事故報告書の作成（phase5_2）</h2>
+        <h2 className="text-xl font-bold text-slate-800">新規事故報告書の作成（phase3.5）</h2>
         <p className="text-sm text-slate-500 mt-1">
           事故の概要を入力して、AIエージェントに報告書の作成を依頼します
         </p>

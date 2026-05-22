@@ -1,12 +1,47 @@
-import type { CreateReportInput, Report } from "./types";
+import type { CreateReportInput, Photo, Report } from "./types";
 import { searchCameraFrames } from "./camera-search";
 import { analyzeImagesMock } from "./mock-vision";
 import { generateReportContent } from "./report-template";
 import { generateAccidentReportWithAI } from "./accident-report-ai";
+import {
+  applyImageEvaluationToPhotos,
+  buildImageObservationText,
+  evaluateImagesWithAI,
+} from "./image-evaluation-ai";
+
+async function resolvePhotosAndObservation(
+  input: CreateReportInput,
+  photoCandidates: Photo[]
+): Promise<{ photos: Photo[]; imageObservation: string; usedFallback: boolean }> {
+  const aiEnabled = process.env.AI_IMAGE_EVALUATION_ENABLED === "true";
+
+  if (!aiEnabled || photoCandidates.length === 0) {
+    const imageObservation = await analyzeImagesMock(photoCandidates);
+    return { photos: photoCandidates, imageObservation, usedFallback: false };
+  }
+
+  try {
+    const evaluation = await evaluateImagesWithAI({ input, photos: photoCandidates });
+    const photos = applyImageEvaluationToPhotos(photoCandidates, evaluation);
+    const imageObservation = buildImageObservationText(evaluation);
+    return { photos, imageObservation, usedFallback: false };
+  } catch (err) {
+    console.error("Image evaluation failed. Falling back to analyzeImagesMock.", err);
+    const imageObservation = await analyzeImagesMock(photoCandidates);
+    return { photos: photoCandidates, imageObservation, usedFallback: true };
+  }
+}
 
 export async function generateReportDraft(input: CreateReportInput): Promise<Report> {
-  const photos = await searchCameraFrames(input);
-  const imageObservation = await analyzeImagesMock(photos);
+  const photoCandidates = await searchCameraFrames(input);
+  const { photos, imageObservation, usedFallback } = await resolvePhotosAndObservation(
+    input,
+    photoCandidates
+  );
+
+  console.log(
+    `report draft generation: photoCandidates=${photoCandidates.length}, photosUsed=${photos.length}, imageEvalFallback=${usedFallback}`
+  );
 
   let content;
   if (process.env.AI_REPORT_GENERATION_ENABLED === "true") {

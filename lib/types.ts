@@ -33,6 +33,11 @@ export type Photo = {
   cameraName: string;
   capturedAt: string;
   photoLocationName: string;
+  blobContainer?: string;
+  blobName?: string;
+  caption?: string;
+  relevanceScore?: number;
+  observedFacts?: string[];
 };
 
 export type Feedback = {

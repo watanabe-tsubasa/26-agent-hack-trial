@@ -1,4 +1,4 @@
-import { BlobServiceClient } from "@azure/storage-blob";
+import { BlobSASPermissions, BlobServiceClient } from "@azure/storage-blob";
 
 function getBlobServiceClient(): BlobServiceClient {
   const connStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
@@ -23,5 +23,20 @@ export async function uploadFile(
   const blockBlobClient = containerClient.getBlockBlobClient(blobName);
   await blockBlobClient.uploadData(data, {
     blobHTTPHeaders: { blobContentType: contentType },
+  });
+}
+
+export async function generateBlobReadSasUrl(
+  container: string,
+  blobName: string,
+  expiresInMinutes = 15
+): Promise<string> {
+  const client = getBlobServiceClient();
+  const containerClient = client.getContainerClient(container);
+  const blobClient = containerClient.getBlobClient(blobName);
+  const expiresOn = new Date(Date.now() + expiresInMinutes * 60 * 1000);
+  return blobClient.generateSasUrl({
+    permissions: BlobSASPermissions.parse("r"),
+    expiresOn,
   });
 }

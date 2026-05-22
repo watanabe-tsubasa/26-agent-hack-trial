@@ -61,6 +61,8 @@ export async function searchFrameAssets(scenarioTag: string): Promise<Photo[]> {
       cameraName: asset.cameraName,
       capturedAt: asset.capturedAt,
       photoLocationName: asset.locationName,
+      blobContainer: asset.blobContainer,
+      blobName: asset.blobName,
     };
   });
 }
