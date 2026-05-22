@@ -19,6 +19,7 @@ export async function generateAccidentReportWithAI({
 }: GenerateArgs) {
   const client = getAzureOpenAIClient();
   const deployment = process.env.AZURE_OPENAI_DEPLOYMENT_NAME;
+  console.log(`locationKey: ${locationKey}`);
 
   if (!deployment) throw new Error("AZURE_OPENAI_DEPLOYMENT_NAME is not set");
 
@@ -32,6 +33,7 @@ export async function generateAccidentReportWithAI({
           `\n# 店舗・施設別の補正ルール\n${override.overrideText}`,
         ].join("\n");
       }
+      console.log(`system prompt: ${systemPrompt}`);
     } catch (err) {
       console.error("Failed to fetch location prompt override (using base prompt):", err);
     }
