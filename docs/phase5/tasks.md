@@ -136,4 +136,18 @@ prompt_improvement_runs (
 | report_corrections に location_key カラム追加 | JOIN なしで集計できるようにする |
 | correction_reason UI 追加 | 修正理由を人間が入力できるようにする |
 | 定期実行 cron | 蓄積件数が一定を超えたら自動生成 Job を起動 |
-| 管理画面 | override の一覧・承認・アーカイブをUIから操作 |
+| 管理画面 | override の一覧・承認・アーカイブをUIから操作（Phase 5.5 で実装済み） |
+
+---
+
+## 将来案: 週1自動 draft 生成
+
+現状は管理画面の「改善案を生成」ボタンで手動実行のみだが、将来的には週1回など
+定期的に施設ごとの report_corrections を集計して draft を自動生成する想定。
+
+- active 化は人間承認後のみ（自動 active 化はしない）
+- 候補となる実行基盤:
+  - Azure Container Apps Jobs (cron)
+  - Azure Functions Timer Trigger
+  - GitHub Actions schedule
+- 通知（Slack 等）に draft 作成完了を流すことで、管理者がレビューに気づける運用にする

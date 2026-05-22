@@ -39,6 +39,12 @@ export default function RootLayout({
               <a href="/reports" className="text-blue-200 hover:text-white transition-colors">
                 一覧
               </a>
+              <a
+                href="/admin/prompt-improvements"
+                className="text-blue-200 hover:text-white transition-colors"
+              >
+                補正ルール管理
+              </a>
             </nav>
           </div>
         </header>

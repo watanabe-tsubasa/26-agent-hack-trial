@@ -122,6 +122,66 @@ export async function approveLocationPromptOverride(id: string): Promise<void> {
     `);
 }
 
+export async function getLocationPromptOverride(
+  id: string
+): Promise<LocationPromptOverride | null> {
+  const pool = await getDbPool();
+
+  const result = await pool
+    .request()
+    .input("id", sql.NVarChar, id)
+    .query<OverrideRow>(`
+      select top 1 id, location_key, title, override_text, source, status, analysis_json, created_at, approved_at
+      from location_prompt_overrides
+      where id = @id
+    `);
+
+  const row = result.recordset[0];
+  return row ? rowToOverride(row) : null;
+}
+
+export async function updateLocationPromptOverride({
+  id,
+  title,
+  overrideText,
+}: {
+  id: string;
+  title?: string;
+  overrideText?: string;
+}): Promise<LocationPromptOverride> {
+  if (title === undefined && overrideText === undefined) {
+    throw new Error("title or overrideText must be provided");
+  }
+
+  const existing = await getLocationPromptOverride(id);
+  if (!existing) throw new Error("Override not found");
+  if (existing.status !== "draft") {
+    throw new Error("Only draft overrides can be updated");
+  }
+
+  const pool = await getDbPool();
+  const req = pool.request().input("id", sql.NVarChar, id);
+  const sets: string[] = [];
+  if (title !== undefined) {
+    req.input("title", sql.NVarChar, title);
+    sets.push("title = @title");
+  }
+  if (overrideText !== undefined) {
+    req.input("overrideText", sql.NVarChar, overrideText);
+    sets.push("override_text = @overrideText");
+  }
+
+  await req.query(`
+    update location_prompt_overrides
+    set ${sets.join(", ")}
+    where id = @id
+  `);
+
+  const updated = await getLocationPromptOverride(id);
+  if (!updated) throw new Error("Override not found after update");
+  return updated;
+}
+
 export async function listLocationPromptOverrides(
   locationKey?: string
 ): Promise<LocationPromptOverride[]> {
