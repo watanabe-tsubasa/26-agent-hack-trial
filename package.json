@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "worker:report": "bun worker/report-worker.ts",
+    "worker:report": "tsx worker/report-worker.ts",
     "migrate": "bun scripts/migrate.ts",
     "seed:frames": "bun scripts/seed-frames.ts"
   },
