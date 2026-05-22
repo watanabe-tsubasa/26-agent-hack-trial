@@ -32,8 +32,13 @@ export async function generateAccidentReportWithAI({
           ACCIDENT_REPORT_SYSTEM_PROMPT,
           `\n# 店舗・施設別の補正ルール\n${override.overrideText}`,
         ].join("\n");
+        console.log(
+          `location override loaded: id=${override.id}, locationKey=${override.locationKey}, status=${override.status}, overrideTextLength=${override.overrideText.length}`
+        );
       }
-      console.log(`system prompt: ${systemPrompt}`);
+      console.log(
+        `system prompt updated: ${systemPrompt.includes("店舗・施設別の補正ルール")}`
+      );      
     } catch (err) {
       console.error("Failed to fetch location prompt override (using base prompt):", err);
     }
