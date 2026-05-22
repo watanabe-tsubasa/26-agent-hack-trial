@@ -7,9 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "worker:report": "tsx worker/report-worker.ts",
-    "migrate": "tsx scripts/migrate.ts",
-    "seed:frames": "tsx scripts/seed-frames.ts"
+    "worker:report": "bun worker/report-worker.ts",
+    "migrate": "bun scripts/migrate.ts",
+    "seed:frames": "bun scripts/seed-frames.ts"
   },
   "dependencies": {
     "@azure/service-bus": "^7.9.5",
