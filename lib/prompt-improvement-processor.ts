@@ -2,6 +2,7 @@ import { getDbPool, sql } from "./db";
 import {
   buildCorrectionSummary,
   generateLocationPromptOverride,
+  type CorrectionDiffSet,
 } from "./generate-location-prompt-override";
 import {
   archiveOlderDraftLocationPromptOverrides,
@@ -13,21 +14,24 @@ import {
 } from "./prompt-improvement-run-repository";
 import type { JsonDiffItem } from "./json-diff";
 
-async function getCorrectionsForLocation(locationKey: string): Promise<JsonDiffItem[][]> {
+async function getCorrectionsForLocation(locationKey: string): Promise<CorrectionDiffSet[]> {
   const pool = await getDbPool();
 
   const result = await pool
     .request()
     .input("locationKey", sql.NVarChar, locationKey)
-    .query<{ diff_json: string }>(`
-      select rc.diff_json
+    .query<{ report_id: string; diff_json: string }>(`
+      select rc.report_id, rc.diff_json
       from report_corrections rc
       join reports r on rc.report_id = r.id
       where JSON_VALUE(r.input_json, '$.facilityId') = @locationKey
       order by rc.created_at desc
     `);
 
-  return result.recordset.map((row) => JSON.parse(row.diff_json) as JsonDiffItem[]);
+  return result.recordset.map((row) => ({
+    reportId: row.report_id,
+    items: JSON.parse(row.diff_json) as JsonDiffItem[],
+  }));
 }
 
 export async function runPromptImprovementJob({
@@ -53,7 +57,8 @@ export async function runPromptImprovementJob({
 
     const analysisJson = JSON.stringify({
       summary: proposal.summary,
-      observedCorrectionPatterns: proposal.observedCorrectionPatterns,
+      facilityKnowledgeCandidates: proposal.facilityKnowledgeCandidates,
+      ignoredStyleCorrections: proposal.ignoredStyleCorrections,
       riskNotes: proposal.riskNotes,
     });
 

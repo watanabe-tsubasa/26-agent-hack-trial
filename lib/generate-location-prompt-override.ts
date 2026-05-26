@@ -7,7 +7,13 @@ import {
 import { PROMPT_IMPROVEMENT_SYSTEM_PROMPT } from "./location-prompt-override-prompt";
 import type { JsonDiffItem } from "./json-diff";
 
+export type CorrectionDiffSet = {
+  reportId: string;
+  items: JsonDiffItem[];
+};
+
 type CorrectionExample = {
+  reportId: string;
   fieldPath: string;
   before: string;
   after: string;
@@ -22,17 +28,26 @@ type CorrectionSummary = {
 
 export function buildCorrectionSummary(
   locationKey: string,
-  diffSets: JsonDiffItem[][]
+  diffSets: CorrectionDiffSet[]
 ): CorrectionSummary {
   const fieldCounts: Record<string, number> = {};
   const examples: CorrectionExample[] = [];
 
-  for (const items of diffSets) {
+  for (const { reportId, items } of diffSets) {
     for (const item of items) {
       if (item.changeType !== "update") continue;
       fieldCounts[item.fieldPath] = (fieldCounts[item.fieldPath] ?? 0) + 1;
-      if (examples.length < 10 && typeof item.before === "string" && typeof item.after === "string") {
-        examples.push({ fieldPath: item.fieldPath, before: item.before, after: item.after });
+      if (
+        examples.length < 10 &&
+        typeof item.before === "string" &&
+        typeof item.after === "string"
+      ) {
+        examples.push({
+          reportId,
+          fieldPath: item.fieldPath,
+          before: item.before,
+          after: item.after,
+        });
       }
     }
   }
@@ -42,7 +57,12 @@ export function buildCorrectionSummary(
     .slice(0, 5)
     .map(([field]) => field);
 
-  return { locationKey, correctionCount: diffSets.length, frequentFields, examples };
+  return {
+    locationKey,
+    correctionCount: diffSets.length,
+    frequentFields,
+    examples,
+  };
 }
 
 export async function generateLocationPromptOverride(

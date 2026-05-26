@@ -20,10 +20,38 @@ type ObservedPattern = {
   recommendation: string;
 };
 
+type FacilityKnowledgeCandidate = {
+  category: string;
+  title: string;
+  content: string;
+  confidence: number;
+  evidence: { reportId: string; fieldPath: string; quotedCorrection: string }[];
+  shouldApplyToGeneration: boolean;
+  riskNotes: string[];
+};
+
+type IgnoredStyleCorrection = {
+  fieldPath: string;
+  reason: string;
+};
+
 type AnalysisJson = {
   summary?: string;
+  facilityKnowledgeCandidates?: FacilityKnowledgeCandidate[];
+  ignoredStyleCorrections?: IgnoredStyleCorrection[];
   observedCorrectionPatterns?: ObservedPattern[];
   riskNotes?: string[];
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  leakage: "雨漏り・浸水",
+  construction: "工事・改修",
+  layout: "レイアウト",
+  equipment: "設備",
+  incident_history: "事故既往",
+  maintenance_note: "保守・点検",
+  naming: "正式名称",
+  other: "その他",
 };
 
 const LOCATION_KEY = "store-001";
@@ -74,7 +102,9 @@ function StatusBadge({ status }: { status: Override["status"] }) {
 
 function AnalysisBlock({ analysis }: { analysis: AnalysisJson | null }) {
   if (!analysis) return null;
-  const patterns = analysis.observedCorrectionPatterns ?? [];
+  const candidates = analysis.facilityKnowledgeCandidates ?? [];
+  const ignored = analysis.ignoredStyleCorrections ?? [];
+  const legacyPatterns = analysis.observedCorrectionPatterns ?? [];
   const risks = analysis.riskNotes ?? [];
 
   return (
@@ -85,14 +115,76 @@ function AnalysisBlock({ analysis }: { analysis: AnalysisJson | null }) {
           <p className="text-slate-700 whitespace-pre-wrap">{analysis.summary}</p>
         </div>
       )}
-      {patterns.length > 0 && (
+
+      {candidates.length > 0 && (
         <div>
           <div className="text-xs font-medium text-slate-500 mb-1">
-            AIが見つけた修正傾向
+            AIが抽出した施設固有情報
+          </div>
+          <ul className="space-y-2">
+            {candidates.map((c, i) => (
+              <li key={i} className="border-l-2 border-blue-300 pl-2">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="inline-block px-1.5 py-0.5 rounded text-[10px] bg-blue-100 text-blue-700 border border-blue-200">
+                    {CATEGORY_LABELS[c.category] ?? c.category}
+                  </span>
+                  <span className="text-slate-700 font-medium">{c.title}</span>
+                  <span className="ml-auto text-[10px] text-slate-500">
+                    信頼度: {(c.confidence * 100).toFixed(0)}%
+                    {c.shouldApplyToGeneration ? " / 適用候補" : " / 保留"}
+                  </span>
+                </div>
+                <p className="text-slate-700 whitespace-pre-wrap text-xs">{c.content}</p>
+                {c.evidence.length > 0 && (
+                  <details className="mt-1">
+                    <summary className="text-[11px] text-slate-500 cursor-pointer">
+                      根拠となる修正履歴 ({c.evidence.length} 件)
+                    </summary>
+                    <ul className="mt-1 space-y-0.5 text-[11px]">
+                      {c.evidence.map((e, ei) => (
+                        <li key={ei} className="text-slate-500">
+                          <span className="font-mono">{e.reportId}</span> / {e.fieldPath}: {e.quotedCorrection}
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+                {c.riskNotes.length > 0 && (
+                  <ul className="list-disc pl-5 text-[11px] text-slate-500 mt-1">
+                    {c.riskNotes.map((r, ri) => (
+                      <li key={ri}>{r}</li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {ignored.length > 0 && (
+        <div>
+          <div className="text-xs font-medium text-slate-500 mb-1">
+            施設ナレッジには含めない項目（書きぶり修正）
+          </div>
+          <ul className="space-y-0.5">
+            {ignored.map((p, i) => (
+              <li key={i} className="text-[11px] text-slate-500">
+                <span className="font-mono">{p.fieldPath}</span>: {p.reason}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {candidates.length === 0 && legacyPatterns.length > 0 && (
+        <div>
+          <div className="text-xs font-medium text-slate-500 mb-1">
+            AIが見つけた修正傾向（旧スキーマ）
           </div>
           <ul className="space-y-1">
-            {patterns.map((p, i) => (
-              <li key={i} className="border-l-2 border-blue-300 pl-2">
+            {legacyPatterns.map((p, i) => (
+              <li key={i} className="border-l-2 border-slate-300 pl-2">
                 <div className="text-xs text-slate-500 font-mono">{p.fieldPath}</div>
                 <div className="text-slate-700">{p.pattern}</div>
                 <div className="text-slate-500 text-xs mt-0.5">→ {p.recommendation}</div>
@@ -101,6 +193,7 @@ function AnalysisBlock({ analysis }: { analysis: AnalysisJson | null }) {
           </ul>
         </div>
       )}
+
       {risks.length > 0 && (
         <div>
           <div className="text-xs font-medium text-slate-500 mb-1">適用上の注意</div>
@@ -156,7 +249,7 @@ function DraftCard({
   const handleApprove = async () => {
     if (dirty) {
       if (!confirm("未保存の編集があります。保存せずに適用してよろしいですか？")) return;
-    } else if (!confirm("この補正ルールを適用しますか？同じ施設の既存 active はアーカイブされます。")) {
+    } else if (!confirm("この施設ナレッジを適用しますか？同じ施設の既存 active はアーカイブされます。")) {
       return;
     }
 
@@ -204,7 +297,7 @@ function DraftCard({
 
       <div>
         <label className="block text-xs font-medium text-slate-500 mb-1">
-          補正ルール本文（事故報告書生成 AI のプロンプトに追記されます）
+          施設ナレッジ本文（事故報告書生成 AI に「施設固有の参考情報」として渡されます）
         </label>
         <textarea
           className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
@@ -241,7 +334,7 @@ function DraftCard({
           disabled={approving}
           className="bg-blue-700 hover:bg-blue-800 disabled:bg-blue-400 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
         >
-          {approving ? "適用中..." : "この補正ルールを適用"}
+          {approving ? "適用中..." : "この施設ナレッジを適用"}
         </button>
         {dirty && (
           <span className="text-xs text-amber-600">未保存の編集があります</span>
@@ -255,7 +348,7 @@ function ActiveBlock({ override }: { override: Override | null }) {
   if (!override) {
     return (
       <div className="bg-white border border-dashed border-slate-300 rounded-xl p-6 text-center text-sm text-slate-500">
-        現在 active な補正ルールはありません。draft を適用すると、ここに表示されます。
+        現在 active な施設ナレッジはありません。draft を適用すると、ここに表示されます。
       </div>
     );
   }
@@ -275,7 +368,7 @@ function ActiveBlock({ override }: { override: Override | null }) {
       </div>
       {analysis && <AnalysisBlock analysis={analysis} />}
       <div>
-        <div className="text-xs font-medium text-slate-500 mb-1">補正ルール本文</div>
+        <div className="text-xs font-medium text-slate-500 mb-1">施設ナレッジ本文</div>
         <pre className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm text-slate-800 whitespace-pre-wrap font-mono">
           {override.overrideText}
         </pre>
@@ -450,17 +543,18 @@ export default function PromptImprovementsPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
         <h2 className="text-xl font-bold text-slate-800">
-          補正ルール管理（Phase 5）
+          施設ナレッジ管理（Phase 5）
         </h2>
         <p className="text-sm text-slate-500 mt-1">
-          事故報告書の人間修正履歴から、店舗・施設別の補正ルール案をAIが生成します。
+          事故報告書の人間修正履歴から、施設固有の事実・既往・レイアウト等のナレッジ候補をAIが抽出します。
         </p>
       </div>
 
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800 space-y-1">
-        <p>・AIは改善案を draft として作成します。</p>
+        <p>・AIは施設ナレッジ候補を draft として作成します。</p>
         <p>・適用するまで事故報告書生成には反映されません。</p>
-        <p>・適用後、次回以降の同一施設の報告書生成時に補正ルールが追記されます。</p>
+        <p>・適用後、次回以降の同一施設の報告書生成時に「施設固有の参考情報」として渡されます（断定原因としては扱われません）。</p>
+        <p>・書きぶり・記法など全社で標準化すべき表現ルールは施設ナレッジには保存しません。</p>
         <p className="text-blue-600 text-xs pt-1">
           ※ 本来は管理者権限が必要ですが、デモ実装では認証なしです。
         </p>
@@ -499,7 +593,7 @@ export default function PromptImprovementsPage() {
                   : "受付中..."}
               </>
             ) : (
-              "現在の修正履歴から改善案を生成"
+              "現在の修正履歴から施設ナレッジ候補を生成"
             )}
           </button>
         </div>
@@ -529,7 +623,7 @@ export default function PromptImprovementsPage() {
 
       <section className="space-y-2">
         <h3 className="text-sm font-bold text-slate-600 uppercase tracking-wide">
-          現在適用中の補正ルール
+          現在適用中の施設ナレッジ
         </h3>
         {loading ? (
           <div className="text-sm text-slate-500">読み込み中...</div>
@@ -540,16 +634,16 @@ export default function PromptImprovementsPage() {
 
       <section className="space-y-2">
         <h3 className="text-sm font-bold text-slate-600 uppercase tracking-wide">
-          改善案 draft
+          施設ナレッジ draft
         </h3>
         <p className="text-xs text-slate-500">
-          表示されるのは最新の draft 1件です。過去の draft は新しい改善案を生成すると自動で archived になります。
+          表示されるのは最新の draft 1件です。過去の draft は新しい候補を生成すると自動で archived になります。
         </p>
         {loading ? (
           <div className="text-sm text-slate-500">読み込み中...</div>
         ) : !latestDraft ? (
           <div className="bg-white border border-dashed border-slate-300 rounded-xl p-6 text-center text-sm text-slate-500">
-            draft はまだありません。上の「改善案を生成」ボタンを押してください。
+            draft はまだありません。上の「施設ナレッジ候補を生成」ボタンを押してください。
           </div>
         ) : (
           <DraftCard
