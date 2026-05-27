@@ -2,18 +2,13 @@
 
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
-import type { ProcessingStep, Report, ReportStatus } from "@/lib/types";
+import type { ProcessingStep, Report } from "@/lib/types";
+import { EditableField } from "./_components/EditableField";
+import { isProcessingStatus, resolveStatusLabel } from "./_components/processing-state";
 
-const PROCESSING_STATUSES: ReportStatus[] = ["queued", "generating_report", "processing"];
 
 // ── Processing screen ────────────────────────────────────────────────────────
 
-const STATUS_LABELS: Record<string, string> = {
-  queued: "AIエージェントの処理待ちです",
-  generating_report: "事故報告書ドラフトを生成しています",
-  waiting_human_review: "完了しました。画面を更新しています...",
-  failed: "処理に失敗しました",
-};
 
 function ProcessingScreen({ reportId }: { reportId: string }) {
   const [steps, setSteps] = useState<ProcessingStep[]>([]);
@@ -28,7 +23,7 @@ function ProcessingScreen({ reportId }: { reportId: string }) {
       if (!res.ok) return;
       const data = await res.json();
       setSteps(data.steps ?? []);
-      setStatusLabel(STATUS_LABELS[data.status] ?? data.status);
+      setStatusLabel(resolveStatusLabel(data.status));
       if (!data.isProcessing) {
         if (data.status === "failed") {
           setFailed(true);
@@ -129,41 +124,6 @@ function ProcessingScreen({ reportId }: { reportId: string }) {
 // ── Report editor ─────────────────────────────────────────────────────────────
 
 type Tab = "report" | "photos" | "diff";
-
-function EditableField({
-  label,
-  value,
-  onChange,
-  multiline = false,
-  rows = 3,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  multiline?: boolean;
-  rows?: number;
-}) {
-  return (
-    <div>
-      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{label}</label>
-      {multiline ? (
-        <textarea
-          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none bg-slate-50 focus:bg-white transition-colors"
-          rows={rows}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      ) : (
-        <input
-          type="text"
-          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-slate-50 focus:bg-white transition-colors"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      )}
-    </div>
-  );
-}
 
 function ReportTab({ report, onChange }: { report: Report; onChange: (r: Report) => void }) {
   const set5W = (key: string, val: string) =>
@@ -498,7 +458,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
     return <div className="text-center py-12 text-slate-500">{error || "報告書が見つかりません"}</div>;
   }
 
-  if (PROCESSING_STATUSES.includes(report.status)) {
+  if (isProcessingStatus(report.status)) {
     return <ProcessingScreen reportId={id} />;
   }
 

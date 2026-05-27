@@ -7,12 +7,6 @@ import { DraftCard } from "./_components/DraftCard";
 import { ActiveBlock } from "./_components/ActiveBlock";
 import { StatusBadge } from "./_components/StatusBadge";
 
-
-
-
-
-
-
 const POLL_INTERVAL_MS = 3000;
 
 export default function PromptImprovementsPage() {
