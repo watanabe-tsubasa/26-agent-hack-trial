@@ -2,17 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-const DEFAULT_FORM = {
-  summary: "本館3階 南側廊下で天井ボードが落下していた。",
-  occurredAt: "2025-05-20T10:15",
-  location: "本館 3階 南側廊下",
-  note: "現時点で人的被害は確認されていない。",
-  hasVictim: false,
-  recoveryStatus: "未復旧",
-  amountImpact: "未算定",
-  facilityId: "store-001",
-};
+import { buildCreateReportPayload, DEFAULT_FORM, validateRequired } from "./_components/new-report-form-utils";
 
 export default function NewReportPage() {
   const router = useRouter();
@@ -22,8 +12,9 @@ export default function NewReportPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.summary || !form.occurredAt || !form.location) {
-      setError("事故概要・発生日時・発生場所は必須です。");
+    const validationError = validateRequired(form);
+    if (validationError) {
+      setError(validationError);
       return;
     }
     setLoading(true);
@@ -32,10 +23,7 @@ export default function NewReportPage() {
       const res = await fetch("/api/reports", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          occurredAt: new Date(form.occurredAt).toISOString(),
-        }),
+        body: JSON.stringify(buildCreateReportPayload(form)),
       });
       if (!res.ok) throw new Error("作成に失敗しました");
       const { reportId } = await res.json();

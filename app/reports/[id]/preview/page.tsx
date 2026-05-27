@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Report } from "@/lib/types";
 import { PrintButton } from "./PrintButton";
+import { CIRCLE_NUMS, formatDate, resolvePreviewStatus } from "./_components/preview-utils";
 
 async function getReport(id: string): Promise<Report | null> {
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
@@ -8,22 +9,6 @@ async function getReport(id: string): Promise<Report | null> {
   if (!res.ok) return null;
   return res.json();
 }
-
-function formatDate(iso: string): string {
-  try {
-    return new Intl.DateTimeFormat("ja-JP", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
-
-const CIRCLE_NUMS = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"];
 
 export default async function PreviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -68,7 +53,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
             ["発生日時", formatDate(report.occurredAt)],
             ["発生場所", report.location],
             ["復旧日時", report.recoveredAt ? formatDate(report.recoveredAt) : "未復旧"],
-            ["ステータス", report.status === "confirmed" ? "確定済" : "ドラフト"],
+            ["ステータス", resolvePreviewStatus(report.status)],
           ].map(([label, value]) => (
             <div key={label} className="border border-slate-300 p-2">
               <div className="text-xs text-slate-500 font-medium">{label}</div>
