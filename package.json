@@ -9,7 +9,9 @@
     "lint": "eslint",
     "worker:report": "tsx worker/report-worker.ts",
     "migrate": "bun scripts/migrate.ts",
-    "seed:frames": "bun scripts/seed-frames.ts"
+    "seed:frames": "bun scripts/seed-frames.ts",
+    "test": "pnpm exec tsx --test app/reports/[id]/diff/_components/__tests__/diff-utils.test.ts app/admin/prompt-improvements/_components/__tests__/utils.test.ts lib/__tests__/prompt-improvement-processor.test.ts",
+    "test:coverage": "pnpm exec tsx --test --experimental-test-coverage app/reports/[id]/diff/_components/__tests__/diff-utils.test.ts"
   },
   "dependencies": {
     "@azure/service-bus": "^7.9.5",

@@ -14,7 +14,7 @@ import {
 } from "./prompt-improvement-run-repository";
 import type { JsonDiffItem } from "./json-diff";
 
-async function getCorrectionsForLocation(locationKey: string): Promise<CorrectionDiffSet[]> {
+export async function getCorrectionsForLocation(locationKey: string): Promise<CorrectionDiffSet[]> {
   const pool = await getDbPool();
 
   const result = await pool
@@ -34,26 +34,49 @@ async function getCorrectionsForLocation(locationKey: string): Promise<Correctio
   }));
 }
 
-export async function runPromptImprovementJob({
-  runId,
-  locationKey,
-}: {
-  runId: string;
-  locationKey: string;
-}): Promise<void> {
+type PromptImprovementDeps = {
+  getCorrections: (locationKey: string) => Promise<CorrectionDiffSet[]>;
+  buildSummary: typeof buildCorrectionSummary;
+  generateOverride: typeof generateLocationPromptOverride;
+  createDraft: typeof createDraftLocationPromptOverride;
+  archiveOlderDrafts: typeof archiveOlderDraftLocationPromptOverrides;
+  completeRun: typeof completePromptImprovementRun;
+  failRun: typeof failPromptImprovementRun;
+};
+
+const defaultDeps: PromptImprovementDeps = {
+  getCorrections: getCorrectionsForLocation,
+  buildSummary: buildCorrectionSummary,
+  generateOverride: generateLocationPromptOverride,
+  createDraft: createDraftLocationPromptOverride,
+  archiveOlderDrafts: archiveOlderDraftLocationPromptOverrides,
+  completeRun: completePromptImprovementRun,
+  failRun: failPromptImprovementRun,
+};
+
+export async function runPromptImprovementJob(
+  {
+    runId,
+    locationKey,
+  }: {
+    runId: string;
+    locationKey: string;
+  },
+  deps: PromptImprovementDeps = defaultDeps
+): Promise<void> {
   try {
-    const diffSets = await getCorrectionsForLocation(locationKey);
+    const diffSets = await deps.getCorrections(locationKey);
 
     if (diffSets.length === 0) {
-      await failPromptImprovementRun({
+      await deps.failRun({
         id: runId,
         errorMessage: "No corrections found for this location",
       });
       return;
     }
 
-    const summary = buildCorrectionSummary(locationKey, diffSets);
-    const proposal = await generateLocationPromptOverride(summary);
+    const summary = deps.buildSummary(locationKey, diffSets);
+    const proposal = await deps.generateOverride(summary);
 
     const analysisJson = JSON.stringify({
       summary: proposal.summary,
@@ -62,7 +85,7 @@ export async function runPromptImprovementJob({
       riskNotes: proposal.riskNotes,
     });
 
-    const overrideId = await createDraftLocationPromptOverride({
+    const overrideId = await deps.createDraft({
       locationKey,
       title: proposal.title,
       overrideText: proposal.overrideText,
@@ -70,7 +93,7 @@ export async function runPromptImprovementJob({
       analysisJson,
     });
 
-    const archivedCount = await archiveOlderDraftLocationPromptOverrides({
+    const archivedCount = await deps.archiveOlderDrafts({
       locationKey,
       keepId: overrideId,
     });
@@ -80,7 +103,7 @@ export async function runPromptImprovementJob({
       );
     }
 
-    await completePromptImprovementRun({
+    await deps.completeRun({
       id: runId,
       inputCorrectionCount: diffSets.length,
       summaryJson: JSON.stringify(summary),
@@ -88,7 +111,7 @@ export async function runPromptImprovementJob({
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    await failPromptImprovementRun({ id: runId, errorMessage: message });
+    await deps.failRun({ id: runId, errorMessage: message });
     throw err;
   }
 }
