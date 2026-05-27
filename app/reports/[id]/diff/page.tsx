@@ -1,6 +1,6 @@
-import { use } from "react";
 import Link from "next/link";
 import type { Report } from "@/lib/types";
+import { formatSavedAt, getFeedbackCountLabel, resolveDiffValue } from "./_components/diff-utils";
 
 async function getReport(id: string): Promise<Report | null> {
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
@@ -30,7 +30,7 @@ export default async function DiffPage({ params }: { params: Promise<{ id: strin
       <div className="mb-6">
         <h2 className="text-xl font-bold text-slate-800">AI出力と修正差分</h2>
         <p className="text-sm text-slate-500 mt-1">
-          {report.feedbacks.length} 件の修正履歴
+          {getFeedbackCountLabel(report)}
         </p>
       </div>
 
@@ -66,14 +66,14 @@ export default async function DiffPage({ params }: { params: Promise<{ id: strin
               <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-200">
                 <span className="font-semibold text-slate-800 text-sm">{fb.fieldName}</span>
                 <span className="text-xs text-slate-400">
-                  {new Date(fb.savedAt).toLocaleString("ja-JP")}
+                  {formatSavedAt(fb.savedAt)}
                 </span>
               </div>
               <div className="p-5 space-y-3">
                 <div>
                   <div className="text-xs font-semibold text-red-500 uppercase tracking-wide mb-2">AI出力</div>
                   <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-900 whitespace-pre-wrap">
-                    {fb.before || "（空）"}
+                    {resolveDiffValue(fb.before)}
                   </div>
                 </div>
                 <div className="flex items-center justify-center">
@@ -84,7 +84,7 @@ export default async function DiffPage({ params }: { params: Promise<{ id: strin
                 <div>
                   <div className="text-xs font-semibold text-green-500 uppercase tracking-wide mb-2">修正後</div>
                   <div className="rounded-lg bg-green-50 border border-green-100 px-4 py-3 text-sm text-green-900 whitespace-pre-wrap">
-                    {fb.after || "（空）"}
+                    {resolveDiffValue(fb.after)}
                   </div>
                 </div>
                 <div>
