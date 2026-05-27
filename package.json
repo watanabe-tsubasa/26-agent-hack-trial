@@ -10,8 +10,8 @@
     "worker:report": "tsx worker/report-worker.ts",
     "migrate": "bun scripts/migrate.ts",
     "seed:frames": "bun scripts/seed-frames.ts",
-    "test": "pnpm exec tsx --test app/reports/[id]/diff/_components/__tests__/diff-utils.test.ts",
-    "test:coverage": "pnpm exec tsx --test --experimental-test-coverage app/reports/[id]/diff/_components/__tests__/diff-utils.test.ts"
+    "test": "pnpm exec tsx --test app/reports/[id]/_components/__tests__/processing-state.test.ts app/reports/_components/__tests__/report-list-utils.test.ts app/reports/[id]/preview/_components/__tests__/preview-utils.test.ts app/_components/__tests__/new-report-form-utils.test.ts",
+    "test:coverage": "pnpm exec tsx --test --experimental-test-coverage app/reports/[id]/_components/__tests__/processing-state.test.ts app/reports/_components/__tests__/report-list-utils.test.ts app/reports/[id]/preview/_components/__tests__/preview-utils.test.ts app/_components/__tests__/new-report-form-utils.test.ts"
   },
   "dependencies": {
     "@azure/service-bus": "^7.9.5",
