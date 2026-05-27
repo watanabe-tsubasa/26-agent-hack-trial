@@ -1,20 +1,5 @@
 import { ServiceBusClient, ServiceBusReceiver } from "@azure/service-bus";
-import { generateReportDraft } from "../lib/mock-agent";
-import {
-  getInputJson,
-  saveAiDraft,
-  updateReportStatus,
-} from "../lib/report-repository";
-import {
-  parsePromptImprovementMessage,
-  parseReportGenerationMessage,
-} from "../lib/job-messages";
-import { runPromptImprovementJob } from "../lib/prompt-improvement-processor";
-import {
-  getActivePromptImprovementRun,
-  markPromptImprovementRunRunning,
-  markPromptImprovementRunSuperseded,
-} from "../lib/prompt-improvement-run-repository";
+import { handlePromptImprovementMessage, handleReportMessage } from "./handlers";
 
 const connectionString = process.env.SERVICE_BUS_CONNECTION_STRING;
 const reportQueueName = process.env.SERVICE_BUS_REPORT_QUEUE_NAME;
@@ -23,73 +8,6 @@ const promptImprovementQueueName =
 
 if (!connectionString) throw new Error("SERVICE_BUS_CONNECTION_STRING is not set");
 if (!reportQueueName) throw new Error("SERVICE_BUS_REPORT_QUEUE_NAME is not set");
-
-async function handleReportMessage(body: unknown): Promise<void> {
-  const parsed = parseReportGenerationMessage(body);
-  if (!parsed) {
-    console.warn("[report] invalid message body, skipping:", body);
-    return;
-  }
-
-  const { reportId } = parsed;
-  console.log(`[report:${reportId}] start`);
-
-  try {
-    await updateReportStatus(reportId, "generating_report");
-
-    const input = await getInputJson(reportId);
-    if (!input) throw new Error(`input not found: ${reportId}`);
-
-    const draft = await generateReportDraft(input);
-    draft.id = reportId;
-    draft.status = "waiting_human_review";
-
-    await saveAiDraft(reportId, draft);
-    console.log(`[report:${reportId}] completed`);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "unknown error";
-    console.error(`[report:${reportId}] failed:`, err);
-    await updateReportStatus(reportId, "failed", msg);
-    throw err;
-  }
-}
-
-async function handlePromptImprovementMessage(body: unknown): Promise<void> {
-  const parsed = parsePromptImprovementMessage(body);
-  if (!parsed) {
-    console.warn("[prompt-improvement] invalid message body, skipping:", body);
-    return;
-  }
-
-  const { runId, locationKey } = parsed;
-  console.log(`[prompt-improvement:${runId}] received locationKey=${locationKey}`);
-
-  const activeRun = await getActivePromptImprovementRun(locationKey);
-  if (!activeRun || activeRun.id !== runId) {
-    const reason = activeRun
-      ? `newer active run exists: ${activeRun.id}`
-      : "no active run for this locationKey";
-    console.warn(
-      `[prompt-improvement:${runId}] superseded locationKey=${locationKey} reason="${reason}"`
-    );
-    await markPromptImprovementRunSuperseded(runId, reason);
-    return;
-  }
-
-  console.log(`[prompt-improvement:${runId}] start locationKey=${locationKey}`);
-
-  try {
-    await markPromptImprovementRunRunning(runId);
-    await runPromptImprovementJob({ runId, locationKey });
-    console.log(`[prompt-improvement:${runId}] completed locationKey=${locationKey}`);
-  } catch (err) {
-    console.error(
-      `[prompt-improvement:${runId}] failed locationKey=${locationKey}:`,
-      err
-    );
-    throw err;
-  }
-}
 
 function startReceiver(
   client: ServiceBusClient,
