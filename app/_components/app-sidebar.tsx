@@ -56,7 +56,7 @@ export function AppSidebar({ open, session }: Props) {
                   : "text-slate-700 hover:bg-slate-50"
               }`}
             >
-              <Icon className="w-5 h-5 flex-shrink-0" strokeWidth={1.75} />
+              <Icon className="w-5 h-5 shrink-0" strokeWidth={1.75} />
               {open && (
                 <div className="min-w-0">
                   <div className="font-medium leading-tight">{item.label}</div>

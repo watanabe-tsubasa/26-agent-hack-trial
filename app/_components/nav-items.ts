@@ -24,7 +24,10 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: "事故報一覧",
     description: "作成済み事故報を確認",
     iconKey: "fileText",
-    visibleTo: ["site_user", "admin"],
+    visibleTo: [
+      "site_user", 
+      // "admin" // 管理者も事故報一覧を見れた方が良さそうだが、全サイト検索・サイト別検索を実装していないので、ひとまず管理者からはこのメニューを消す --- IGNORE ---
+    ],
   },
   {
     href: "/admin/prompt-improvements",
