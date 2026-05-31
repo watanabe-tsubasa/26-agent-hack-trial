@@ -50,7 +50,7 @@ export function KnowledgeImprovementDialog({
             <GoodjobAvatar
               tone={tone}
               size="lg"
-              className={`drop-shadow ${!failed && !done ? "animate-[spinY_2s_linear_infinite]" : ""}`}
+              className={`drop-shadow ${!failed && !done ? "animate-[flipYWithPause_2.2s_ease-in-out_infinite]" : ""}`}
             />
           </div>
           <div className="min-w-0 flex-1">

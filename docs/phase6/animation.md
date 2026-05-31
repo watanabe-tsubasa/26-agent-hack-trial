@@ -1,3 +1,4 @@
+```md: agent_1
 できます。やりたいのは `rotate()` / `animate-spin` ではなく、**3D回転の `rotateY()` または `rotateX()`** です。
 
 たとえば、画像を「画面に対して垂直な軸」でコインみたいに回したいなら `rotateY` です。
@@ -160,7 +161,7 @@ export default config;
 Tailwind v3 などで `perspective-normal` がない場合は arbitrary value で書けます。
 
 ```tsx
-<div className="[perspective:800px]">
+<div className="perspective-midrange">
   <img
     src="/sample.png"
     alt=""
@@ -179,7 +180,7 @@ Tailwind v3 などで `perspective-normal` がない場合は arbitrary value �
 <img
   src="/sample.png"
   alt=""
-  className="animate-[spinY_1.5s_linear_infinite] [backface-visibility:hidden]"
+  className="animate-[spinY_1.5s_linear_infinite] backface-hidden"
 />
 ```
 
@@ -193,7 +194,7 @@ Tailwind v3 などで `perspective-normal` がない場合は arbitrary value �
 
 ```tsx
 <div className="grid min-h-screen place-items-center">
-  <div className="[perspective:800px]">
+  <div className="perspective-midrange">
     <img
       src="/coin.png"
       alt="coin"
@@ -218,3 +219,151 @@ Tailwind v3 などで `perspective-normal` がない場合は arbitrary value �
 
 [1]: https://tailwindcss.com/docs/rotate?utm_source=chatgpt.com "rotate - Transforms - Tailwind CSS"
 [2]: https://tailwindcss.com/docs/perspective?utm_source=chatgpt.com "perspective - Transforms - Tailwind CSS"
+```
+
+```md: agent_2
+可能です。`keyframes` の中で、**回転する区間**と**止まる区間**を分ければOKです。
+
+たとえば「0.6秒で1回転 → 1秒止まる」を繰り返すなら、全体を `1.6s` のアニメーションにして、後半は同じ角度のままにします。
+
+```css
+@keyframes spinYWithPause {
+  0% {
+    transform: rotateY(0deg);
+  }
+
+  37.5% {
+    transform: rotateY(360deg);
+  }
+
+  100% {
+    transform: rotateY(360deg);
+  }
+}
+```
+
+```tsx
+<div className="perspective-midrange">
+  <img
+    src="/coin.png"
+    alt="coin"
+    className="size-32 animate-[spinYWithPause_1.6s_ease-in-out_infinite]"
+  />
+</div>
+```
+
+`37.5%` の理由は、`0.6s / 1.6s = 37.5%` だからです。
+
+```txt
+0%    → 回転開始
+37.5% → 360度まで回転完了
+100%  → 360度のまま停止
+```
+
+---
+
+もう少しゆったり「1秒で回転 → 1秒停止」なら、全体を `2s` にしてこうです。
+
+```css
+@keyframes spinYWithPause {
+  0% {
+    transform: rotateY(0deg);
+  }
+
+  50% {
+    transform: rotateY(360deg);
+  }
+
+  100% {
+    transform: rotateY(360deg);
+  }
+}
+```
+
+```tsx
+<img
+  src="/coin.png"
+  alt="coin"
+  className="animate-[spinYWithPause_2s_ease-in-out_infinite]"
+/>
+```
+
+---
+
+Tailwind config に入れるなら：
+
+```ts
+// tailwind.config.ts
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  theme: {
+    extend: {
+      keyframes: {
+        spinYWithPause: {
+          "0%": {
+            transform: "rotateY(0deg)",
+          },
+          "50%": {
+            transform: "rotateY(360deg)",
+          },
+          "100%": {
+            transform: "rotateY(360deg)",
+          },
+        },
+      },
+      animation: {
+        spinYWithPause: "spinYWithPause 2s ease-in-out infinite",
+      },
+    },
+  },
+};
+
+export default config;
+```
+
+使う側：
+
+```tsx
+<div className="perspective-midrange">
+  <img
+    src="/coin.png"
+    alt="coin"
+    className="size-32 animate-spinYWithPause"
+  />
+</div>
+```
+
+---
+
+個人的には、UIアイコンやローディング表現ならこのくらいが自然です。
+
+```css
+@keyframes flipYWithPause {
+  0% {
+    transform: rotateY(0deg);
+  }
+
+  35% {
+    transform: rotateY(360deg);
+  }
+
+  100% {
+    transform: rotateY(360deg);
+  }
+}
+```
+
+```tsx
+<div className="perspective-midrange">
+  <img
+    src="/logo.png"
+    alt="logo"
+    className="size-24 animate-[flipYWithPause_2.2s_ease-in-out_infinite]"
+  />
+</div>
+```
+
+`35%` くらいでサッと回って、残りで止まる感じです。
+「ずっと動いていてうるさい」問題を避けられるので、ローディングやステータス表示にはこっちのほうが品がいいです。
+```

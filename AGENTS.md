@@ -8,3 +8,4 @@ CI/CDは構築済みでgit push origin mainでAzure Container Appsにbuildして
 Azure側の実装（az cliの実行）は基本ユーザー側で実装するが、指示があった場合は実行する
 The class `flex-shrink-0` can be written as `shrink-0`
 The class `[perspective:800px]` can be written as `perspective-midrange`
+The class `[backface-visibility:hidden]` can be written as `backface-hidden`(suggestCanonicalClasses)

@@ -17,11 +17,14 @@ body {
   font-family: var(--font-sans);
 }
 
-@keyframes spinY {
-  from {
+@keyframes flipYWithPause {
+  0% {
     transform: rotateY(0deg);
   }
-  to {
+  35% {
+    transform: rotateY(360deg);
+  }
+  100% {
     transform: rotateY(360deg);
   }
 }
