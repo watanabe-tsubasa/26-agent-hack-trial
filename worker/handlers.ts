@@ -1,16 +1,16 @@
-import { generateReportDraft, type GenerationStepReporter } from "../lib/mock-agent";
-import { getInputJson, saveAiDraft, updateReportStatus } from "../lib/report-repository";
+import { generateReportDraft, type GenerationStepReporter } from "../lib/agent/mock-agent";
+import { getInputJson, saveAiDraft, updateReportStatus } from "../lib/reports/report-repository";
 import { parsePromptImprovementMessage, parseReportGenerationMessage } from "../lib/job-messages";
 import {
   runPromptImprovementJob,
   type KnowledgeStepReporter,
-} from "../lib/prompt-improvement-processor";
+} from "../lib/prompt-improvement/prompt-improvement-processor";
 import {
   getActivePromptImprovementRun,
   markPromptImprovementRunRunning,
   markPromptImprovementRunSuperseded,
-} from "../lib/prompt-improvement-run-repository";
-import { appendAgentEvent } from "../lib/agent-event-log";
+} from "../lib/prompt-improvement/prompt-improvement-run-repository";
+import { appendAgentEvent } from "../lib/agent-events/agent-event-log";
 import {
   GENERATION_STEPS,
   type GenerationStepKey,
@@ -18,7 +18,7 @@ import {
 import {
   KNOWLEDGE_IMPROVEMENT_STEPS,
   type KnowledgeImprovementStepKey,
-} from "../lib/knowledge-improvement-steps";
+} from "../lib/prompt-improvement/knowledge-improvement-steps";
 
 type WorkerDeps = {
   parseReportMsg: typeof parseReportGenerationMessage;

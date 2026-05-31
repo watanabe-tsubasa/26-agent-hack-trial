@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import {
   generatedContentJsonSchema,
   generatedContentSchema,
-} from "../lib/accident-report-schema";
+} from "../lib/agent/accident-report-schema";
 
 const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
 const apiKey = process.env.AZURE_OPENAI_API_KEY;

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { runPromptImprovementJob } from "../prompt-improvement-processor";
+import { runPromptImprovementJob } from "../prompt-improvement/prompt-improvement-processor";
 
 test("runPromptImprovementJob marks run failed when no corrections", async () => {
   const calls: string[] = [];

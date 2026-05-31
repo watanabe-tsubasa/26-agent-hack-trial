@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildReportSearchClause } from "../report-search";
+import { buildReportSearchClause } from "../reports/report-search";
 
 test("only facilityId: produces single condition", () => {
   const { where, params } = buildReportSearchClause({ facilityId: "kanda-office" });

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { listLocationPromptOverrides } from "@/lib/location-prompt-override-repository";
+import { listLocationPromptOverrides } from "@/lib/prompt-improvement/location-prompt-override-repository";
 
 export async function GET(req: NextRequest) {
   const locationKey = req.nextUrl.searchParams.get("locationKey") ?? undefined;

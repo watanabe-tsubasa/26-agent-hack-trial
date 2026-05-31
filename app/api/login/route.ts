@@ -1,6 +1,10 @@
 import { NextRequest } from "next/server";
-import { findSiteByKey, findUserByCredentials } from "@/lib/demo-sites";
-import { setSiteCookie } from "@/lib/demo-auth";
+import {
+  ADMIN_DISPLAY_NAME,
+  findSiteByKey,
+  findUserByCredentials,
+} from "@/lib/auth/demo-sites";
+import { setSiteCookie } from "@/lib/auth/demo-auth";
 
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as
@@ -19,11 +23,15 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "invalid credentials" }, { status: 401 });
   }
 
+  await setSiteCookie(user.siteKey);
+
+  if (user.role === "admin") {
+    return Response.json({ role: "admin", siteName: ADMIN_DISPLAY_NAME });
+  }
+
   const site = findSiteByKey(user.siteKey);
   if (!site) {
     return Response.json({ error: "site not found" }, { status: 500 });
   }
-
-  await setSiteCookie(user.siteKey);
-  return Response.json({ siteKey: site.siteKey, siteName: site.name });
+  return Response.json({ role: "site_user", siteKey: site.siteKey, siteName: site.name });
 }

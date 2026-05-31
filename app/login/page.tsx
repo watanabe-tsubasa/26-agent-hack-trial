@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 const QUICK_LOGINS = [
   { loginId: "kanda", password: "goodjob", label: "神田事務所サイト" },
   { loginId: "mall", password: "goodjob", label: "イオンモール神田サイト" },
+  { loginId: "admin", password: "goodjob", label: "管理者（全施設）" },
 ];
 
 export default function LoginPage() {

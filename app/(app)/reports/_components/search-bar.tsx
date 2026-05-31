@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { SEARCHABLE_STATUSES } from "@/lib/report-search";
+import { SEARCHABLE_STATUSES } from "@/lib/reports/report-search";
 import { resolveStatusLabel } from "./report-list-utils";
 
 export function ReportSearchBar() {

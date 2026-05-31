@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import {
   getLocationPromptOverride,
   updateLocationPromptOverride,
-} from "@/lib/location-prompt-override-repository";
+} from "@/lib/prompt-improvement/location-prompt-override-repository";
 
 type Params = { params: Promise<{ id: string }> };
 

@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
-import { confirmReport, getReportDrafts, getReportStatus } from "@/lib/report-repository";
-import { diffJson } from "@/lib/json-diff";
-import { saveReportCorrection } from "@/lib/report-correction-repository";
+import { confirmReport, getReportDrafts, getReportStatus } from "@/lib/reports/report-repository";
+import { diffJson } from "@/lib/prompt-improvement/json-diff";
+import { saveReportCorrection } from "@/lib/reports/report-correction-repository";
+import { indexReportForRag } from "@/lib/report-rag/index-report";
 import type { Report } from "@/lib/types";
 
 type Params = { params: Promise<{ id: string }> };
@@ -34,5 +35,13 @@ export async function POST(_req: NextRequest, { params }: Params) {
   }
 
   await confirmReport(id);
+
+  // best-effort RAG indexing (do not fail confirm on error)
+  try {
+    await indexReportForRag(id);
+  } catch (err) {
+    console.warn("[rag-index] post-confirm indexing failed", err);
+  }
+
   return Response.json({ reportId: id, status: "confirmed" });
 }

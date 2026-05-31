@@ -1,11 +1,16 @@
-import { getCurrentSiteFromCookies } from "@/lib/demo-auth";
+import { getCurrentSessionFromCookies } from "@/lib/auth/demo-auth";
 
 export async function GET() {
-  const site = await getCurrentSiteFromCookies();
-  if (!site) {
+  const session = await getCurrentSessionFromCookies();
+  if (!session) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
+  if (session.role === "admin") {
+    return Response.json({ role: "admin", siteName: session.siteName });
+  }
+  const { site } = session;
   return Response.json({
+    role: "site_user",
     siteKey: site.siteKey,
     siteName: site.name,
     facilityId: site.facilityId,

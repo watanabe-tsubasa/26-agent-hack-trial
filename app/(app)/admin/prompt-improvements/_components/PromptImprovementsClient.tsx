@@ -6,7 +6,7 @@ import {
   deriveKnowledgeStepStates,
   deriveKnowledgeStepStatesFromEvents,
   pickKnowledgeGoodjobTone,
-} from "@/lib/knowledge-improvement-steps";
+} from "@/lib/prompt-improvement/knowledge-improvement-steps";
 import {
   KNOWLEDGE_ALREADY_RUNNING_COPY,
   KNOWLEDGE_NO_CORRECTIONS_COPY,
@@ -24,7 +24,7 @@ import {
   SECTION_DRAFT_EMPTY,
   SECTION_DRAFT_HINT,
   SECTION_DRAFT_TITLE,
-} from "@/lib/knowledge-copy";
+} from "@/lib/prompt-improvement/knowledge-copy";
 import type { Override, Run } from "./types";
 import { formatDateTime, isInFlight, selectOverrideGroups } from "./utils";
 import { DraftCard } from "./DraftCard";

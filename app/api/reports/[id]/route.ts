@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
-import { getReportById, saveUserDraft } from "@/lib/report-repository";
-import { recordFeedbacks } from "@/lib/diff";
+import { getReportById, saveUserDraft } from "@/lib/reports/report-repository";
+import { recordFeedbacks } from "@/lib/agent/diff";
 
 type Params = { params: Promise<{ id: string }> };
 

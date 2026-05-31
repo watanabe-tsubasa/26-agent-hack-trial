@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { SITE_COOKIE_NAME } from "@/lib/demo-sites";
+import { SITE_COOKIE_NAME } from "@/lib/auth/demo-sites";
 
 const PUBLIC_PATHS = ["/login", "/api/login", "/api/logout"];
 

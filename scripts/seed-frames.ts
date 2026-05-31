@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 import { uploadFile } from "../lib/blob-storage";
-import { upsertFrameAsset } from "../lib/frame-asset-repository";
+import { upsertFrameAsset } from "../lib/agent/frame-asset-repository";
 import { getDbPool } from "../lib/db";
 
 const CONTAINER = "frames";

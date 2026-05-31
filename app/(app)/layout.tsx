@@ -1,25 +1,26 @@
 import { redirect } from "next/navigation";
-import { getCurrentSiteFromCookies } from "@/lib/demo-auth";
+import { getCurrentSessionFromCookies } from "@/lib/auth/demo-auth";
 import { AppShell } from "@/app/_components/app-shell";
+import type { AppSession } from "@/app/_components/app-session";
 
 export default async function AppGroupLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const site = await getCurrentSiteFromCookies();
-  if (!site) redirect("/login");
+  const session = await getCurrentSessionFromCookies();
+  if (!session) redirect("/login");
 
-  return (
-    <AppShell
-      initialSession={{
-        siteKey: site.siteKey,
-        siteName: site.name,
-        facilityId: site.facilityId,
-        locationKey: site.locationKey,
-      }}
-    >
-      {children}
-    </AppShell>
-  );
+  const appSession: AppSession =
+    session.role === "admin"
+      ? { role: "admin", siteName: session.siteName }
+      : {
+          role: "site_user",
+          siteKey: session.site.siteKey,
+          siteName: session.site.name,
+          facilityId: session.site.facilityId,
+          locationKey: session.site.locationKey,
+        };
+
+  return <AppShell initialSession={appSession}>{children}</AppShell>;
 }

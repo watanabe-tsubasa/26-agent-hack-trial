@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getPromptImprovementRun } from "@/lib/prompt-improvement-run-repository";
+import { getPromptImprovementRun } from "@/lib/prompt-improvement/prompt-improvement-run-repository";
 
 type Params = { params: Promise<{ id: string }> };
 

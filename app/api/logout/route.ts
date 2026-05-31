@@ -1,4 +1,4 @@
-import { clearSiteCookie } from "@/lib/demo-auth";
+import { clearSiteCookie } from "@/lib/auth/demo-auth";
 
 export async function POST() {
   await clearSiteCookie();

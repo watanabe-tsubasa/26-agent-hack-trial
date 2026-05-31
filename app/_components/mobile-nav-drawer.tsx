@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, Home, Sparkles, X } from "lucide-react";
+import { FileText, Home, Search, Sparkles, X } from "lucide-react";
 import { GoodjobAvatar } from "@/components/goodjob-avatar";
 import { LogoutButton } from "./header-bar";
 import type { AppSession } from "./app-session";
-import { NAV_ITEMS, isActivePath, type NavIconKey } from "./nav-items";
+import { isActivePath, navItemsForRole, type NavIconKey } from "./nav-items";
 
 const ICONS: Record<NavIconKey, typeof Home> = {
   home: Home,
   fileText: FileText,
   sparkles: Sparkles,
+  search: Search,
 };
 
 type Props = {
@@ -23,6 +24,7 @@ type Props = {
 export function MobileNavDrawer({ open, session, onClose }: Props) {
   const pathname = usePathname();
   if (!open) return null;
+  const items = navItemsForRole(session.role);
 
   return (
     <div className="fixed inset-0 z-50 md:hidden">
@@ -53,7 +55,7 @@ export function MobileNavDrawer({ open, session, onClose }: Props) {
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
-          {NAV_ITEMS.map((item) => {
+          {items.map((item) => {
             const Icon = ICONS[item.iconKey];
             const active = isActivePath(item.href, pathname);
             return (

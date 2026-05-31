@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, Home, Sparkles } from "lucide-react";
+import { FileText, Home, Search, Sparkles } from "lucide-react";
 import { GoodjobAvatar } from "@/components/goodjob-avatar";
 import type { AppSession } from "./app-session";
-import { NAV_ITEMS, isActivePath, type NavIconKey } from "./nav-items";
+import { isActivePath, navItemsForRole, type NavIconKey } from "./nav-items";
 
 const ICONS: Record<NavIconKey, typeof Home> = {
   home: Home,
   fileText: FileText,
   sparkles: Sparkles,
+  search: Search,
 };
 
 type Props = {
@@ -20,6 +21,7 @@ type Props = {
 
 export function AppSidebar({ open, session }: Props) {
   const pathname = usePathname();
+  const items = navItemsForRole(session.role);
 
   return (
     <aside
@@ -40,7 +42,7 @@ export function AppSidebar({ open, session }: Props) {
       </div>
 
       <nav className="flex-1 p-2 space-y-1">
-        {NAV_ITEMS.map((item) => {
+        {items.map((item) => {
           const Icon = ICONS[item.iconKey];
           const active = isActivePath(item.href, pathname);
           return (

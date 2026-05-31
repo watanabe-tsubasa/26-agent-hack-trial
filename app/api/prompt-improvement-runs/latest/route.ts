@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getLatestPromptImprovementRun } from "@/lib/prompt-improvement-run-repository";
+import { getLatestPromptImprovementRun } from "@/lib/prompt-improvement/prompt-improvement-run-repository";
 
 export async function GET(req: NextRequest) {
   const locationKey = req.nextUrl.searchParams.get("locationKey");

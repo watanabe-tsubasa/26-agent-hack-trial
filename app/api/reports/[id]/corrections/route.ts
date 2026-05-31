@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
-import { getReportStatus } from "@/lib/report-repository";
-import { getCorrectionsForReport } from "@/lib/report-correction-repository";
+import { getReportStatus } from "@/lib/reports/report-repository";
+import { getCorrectionsForReport } from "@/lib/reports/report-correction-repository";
 
 type Params = { params: Promise<{ id: string }> };
 

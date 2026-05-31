@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getReportStatus } from "@/lib/report-repository";
+import { getReportStatus } from "@/lib/reports/report-repository";
 
 type Params = { params: Promise<{ id: string }> };
 

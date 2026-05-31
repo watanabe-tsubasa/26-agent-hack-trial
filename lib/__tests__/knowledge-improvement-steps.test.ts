@@ -5,7 +5,7 @@ import {
   deriveKnowledgeStepStates,
   deriveKnowledgeStepStatesFromEvents,
   pickKnowledgeGoodjobTone,
-} from "../knowledge-improvement-steps";
+} from "../prompt-improvement/knowledge-improvement-steps";
 
 test("queued: first step in_progress, rest pending", () => {
   const snaps = deriveKnowledgeStepStates("queued", 0);

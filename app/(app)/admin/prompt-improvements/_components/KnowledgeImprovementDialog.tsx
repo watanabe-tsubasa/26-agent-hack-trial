@@ -6,10 +6,10 @@ import {
   KNOWLEDGE_HEADLINE_COMPLETE,
   KNOWLEDGE_HEADLINE_FAILED,
   KNOWLEDGE_HEADLINE_RUNNING,
-} from "@/lib/knowledge-copy";
+} from "@/lib/prompt-improvement/knowledge-copy";
 import type {
   KnowledgeStepSnapshot,
-} from "@/lib/knowledge-improvement-steps";
+} from "@/lib/prompt-improvement/knowledge-improvement-steps";
 import type { GoodjobTone } from "@/lib/generation-steps";
 
 type Props = {

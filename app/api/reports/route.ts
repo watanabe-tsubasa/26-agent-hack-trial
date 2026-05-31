@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import type { CreateReportInput } from "@/lib/types";
-import { createQueuedReport, searchReports } from "@/lib/report-repository";
+import { createQueuedReport, searchReports } from "@/lib/reports/report-repository";
 import { enqueueReportGeneration } from "@/lib/service-bus";
-import { getCurrentSiteFromCookies } from "@/lib/demo-auth";
+import { getCurrentSiteFromCookies } from "@/lib/auth/demo-auth";
 
 export async function GET(request: NextRequest) {
   const site = await getCurrentSiteFromCookies();

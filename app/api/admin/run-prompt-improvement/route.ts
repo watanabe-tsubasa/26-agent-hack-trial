@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { createQueuedPromptImprovementRunIfNotExists } from "@/lib/prompt-improvement-run-repository";
+import { createQueuedPromptImprovementRunIfNotExists } from "@/lib/prompt-improvement/prompt-improvement-run-repository";
 import { enqueuePromptImprovement } from "@/lib/service-bus";
 
 export async function POST(req: NextRequest) {

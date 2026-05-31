@@ -1,5 +1,5 @@
 import type { Override } from "./types";
-import { OVERRIDE_STATUS_LABEL } from "@/lib/knowledge-copy";
+import { OVERRIDE_STATUS_LABEL } from "@/lib/prompt-improvement/knowledge-copy";
 
 export function StatusBadge({ status }: { status: Override["status"] }) {
   const styles: Record<Override["status"], string> = {

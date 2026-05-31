@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { searchReports } from "@/lib/report-repository";
-import { requireCurrentSite } from "@/lib/demo-auth";
+import { searchReports } from "@/lib/reports/report-repository";
+import { requireCurrentSite } from "@/lib/auth/demo-auth";
 import { formatDate, resolveStatusColor, resolveStatusLabel } from "./_components/report-list-utils";
 import { ReportSearchBar } from "./_components/search-bar";
 

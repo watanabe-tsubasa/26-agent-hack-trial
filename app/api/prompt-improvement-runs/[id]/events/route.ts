@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { listAgentEventsByRun } from "@/lib/agent-event-log";
+import { listAgentEventsByRun } from "@/lib/agent-events/agent-event-log";
 
 type Params = { params: Promise<{ id: string }> };
 

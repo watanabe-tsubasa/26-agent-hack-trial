@@ -5,7 +5,7 @@ import {
   buildAgentEventDoc,
   listAgentEventsByReport,
   listAgentEventsByRun,
-} from "../agent-event-log";
+} from "../agent-events/agent-event-log";
 
 test("buildAgentEventDoc: report event has entityId = reportId", () => {
   const doc = buildAgentEventDoc({
