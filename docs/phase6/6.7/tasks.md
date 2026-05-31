@@ -118,8 +118,8 @@
 
 ## 10. 動作確認
 
-- [ ] env 未設定でローカル起動 → 既存通り動く（events 系は 200 で `[]` を返す）
-- [ ] Cosmos 環境変数設定 → Worker 実行で agent_events コンテナにレコードが入る
+- [x] env 未設定でローカル起動 → 既存通り動く（events 系は 200 で `[]` を返す）
+- [x] Cosmos 環境変数設定 → Worker 実行で agent_events コンテナにレコードが入る
 - [ ] 事故報生成画面で events 由来のステップ進行が表示される
 - [ ] 失敗時に failed イベントが記録され、UI に warning が出る
 - [ ] Cosmos が一時的に落ちても本線（SQL 更新）は完走する
@@ -128,9 +128,9 @@
 
 ## 11. デプロイ
 
-- [ ] `git push origin main`
-- [ ] Container Apps の env を Cosmos 用に更新（ユーザー対応）
-- [ ] 本番でイベントログが蓄積されることを確認
+- [x] `git push origin main`
+- [x] Container Apps の env を Cosmos 用に更新（ユーザー対応）
+- [x] 本番でイベントログが蓄積されることを確認
 
 ---
 

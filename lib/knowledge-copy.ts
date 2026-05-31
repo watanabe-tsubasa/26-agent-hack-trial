@@ -1,5 +1,5 @@
 import type { GoodjobTone } from "./generation-steps";
-import type { Override, RunStatus } from "@/app/admin/prompt-improvements/_components/types";
+import type { Override, RunStatus } from "@/app/(app)/admin/prompt-improvements/_components/types";
 
 export const KNOWLEDGE_PAGE_TITLE = "施設ナレッジ改善";
 export const KNOWLEDGE_PAGE_DESCRIPTION =

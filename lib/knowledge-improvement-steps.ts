@@ -1,5 +1,5 @@
 import type { GoodjobTone, StepState } from "./generation-steps";
-import type { RunStatus } from "@/app/admin/prompt-improvements/_components/types";
+import type { RunStatus } from "@/app/(app)/admin/prompt-improvements/_components/types";
 
 export type KnowledgeImprovementStepKey =
   | "collect_corrections"

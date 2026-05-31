@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { buildCreateReportPayload, DEFAULT_FORM, validateRequired } from "./_components/new-report-form-utils";
+import { buildCreateReportPayload, DEFAULT_FORM, validateRequired } from "@/app/_components/new-report-form-utils";
 
 export default function NewReportPage() {
   const router = useRouter();
@@ -10,7 +10,7 @@ export default function NewReportPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     const validationError = validateRequired(form);
     if (validationError) {
