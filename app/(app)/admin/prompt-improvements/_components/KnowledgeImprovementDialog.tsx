@@ -46,7 +46,7 @@ export function KnowledgeImprovementDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/25 p-4 backdrop-blur-sm">
       <div className="w-full max-w-2xl rounded-3xl border border-white/40 bg-white/75 p-7 shadow-2xl backdrop-blur-xl">
         <div className="flex items-start gap-4">
-          <GoodjobAvatar tone={tone} size="lg" className="flex-shrink-0 drop-shadow" />
+          <GoodjobAvatar tone={tone} size="lg" className="shrink-0 drop-shadow" />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold text-amber-700 tracking-wide">
               {KNOWLEDGE_DIALOG_LEAD}
@@ -67,7 +67,7 @@ export function KnowledgeImprovementDialog({
         <ol className="mt-6 space-y-2.5">
           {steps.map(({ step, state }) => (
             <li key={step.key} className="flex items-center gap-3">
-              <span className="flex-shrink-0">
+              <span className="shrink-0">
                 {state === "completed" ? (
                   <span className="inline-flex w-5 h-5 rounded-full bg-emerald-500 text-white items-center justify-center text-[10px]">
                     ✓

@@ -52,16 +52,23 @@ export async function generateRagAnswer(input: AnswerInput): Promise<{ answer: s
   if (!deployment) throw new Error("AZURE_OPENAI_DEPLOYMENT_NAME is not set");
 
   const client = getAzureOpenAIClient();
-  const res = await client.chat.grep -R "temperature" -n lib app worker scripts.create({
+  const response = await client.responses.create({
     model: deployment,
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: renderUserPrompt(input) },
+    instructions: SYSTEM_PROMPT,
+    input: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "input_text",
+            text: renderUserPrompt(input),
+          },
+        ],
+      },
     ],
-    temperature: 0.2,
   });
 
-  const answer = res.choices[0]?.message?.content?.trim() ?? "";
+  const answer = response.output_text?.trim() ?? "";
   return { answer };
 }
 

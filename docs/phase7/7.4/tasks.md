@@ -60,3 +60,23 @@
 ## 6. デプロイ
 
 - [ ] `git push origin main`
+
+---
+
+## 7. フォローアップ: Responses API 移行 + temperature 削除
+
+> 背景: 本番 admin チャットで `400 Unsupported value: 'temperature' does not support 0.2 with this model.` エラー。
+> Phase 7.3 で実装した `lib/report-rag/answer.ts` のみ `chat.completions.create` + `temperature: 0.2` を使っており、
+> 他の AI 呼び出し (`lib/agent/accident-report-ai.ts` 等) は既に Responses API 化済。これに揃える。
+
+- [x] `lib/report-rag/answer.ts`
+  - `client.chat.completions.create` → `client.responses.create`
+  - `instructions` で SYSTEM_PROMPT を渡し、`input` は `[{ role: "user", content: [{ type: "input_text", text: ... }] }]`
+  - `response.output_text` を読む
+  - `temperature: 0.2` を削除（gpt-5-mini 系モデルは default=1 のみ許容）
+  - 編集中のペーストミスで混入していた壊れた行も復旧
+- [x] grep `temperature` 全体確認 — 残存は `lib/agent/accident-report-ai.ts` のコメント (`// temperature: 0.2,`) のみ、コードからは消えている
+- [x] tsc clean / pnpm test (44 pass) / pnpm build pass
+- [ ] 本番デプロイ後、admin チャットで「事故報が多いサイトはどこですか？」「神田事務所で救助対応が必要だった事故は？」が回答されることを確認
+
+> Note: 会話履歴を引き継ぐ Responses API の `previous_response_id` / 自前履歴 input は 7.5 以降の余力対応とする（issue.md 参照）。
