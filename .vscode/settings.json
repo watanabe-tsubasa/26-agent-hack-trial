@@ -1,0 +1,7 @@
+{
+  "editor.quickSuggestions": {
+    "other": "offWhenInlineCompletions",
+    "comments": "off",
+    "strings": "on"
+  }
+}
