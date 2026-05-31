@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useRef, useState, use } from "react";
 import Link from "next/link";
-import type { Report } from "@/lib/types";
+import type { Photo, Report } from "@/lib/types";
 import { EditableField } from "./_components/EditableField";
 import { isProcessingStatus } from "./_components/processing-state";
 import { ProcessingScreen } from "./_components/ProcessingScreen";
@@ -113,7 +113,21 @@ function ReportTab({ report, onChange }: { report: Report; onChange: (r: Report)
 
 const CIRCLE_NUMS = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"];
 
-function PhotosTab({ report, onChange }: { report: Report; onChange: (r: Report) => void }) {
+function PhotosTab({
+  report,
+  onChange,
+  reportId,
+  readOnly,
+}: {
+  report: Report;
+  onChange: (r: Report) => void;
+  reportId: string;
+  readOnly: boolean;
+}) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+
   const setPhotoName = (id: string, name: string) => {
     const photos = report.photos.map((p) =>
       p.id === id ? { ...p, photoLocationName: name } : p
@@ -133,6 +147,37 @@ function PhotosTab({ report, onChange }: { report: Report; onChange: (r: Report)
     onChange({ ...report, photos });
   };
 
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (report.photos.length >= 8) {
+      setUploadError("写真は最大8枚までです");
+      return;
+    }
+    setUploading(true);
+    setUploadError("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch(`/api/reports/${reportId}/photos/upload`, {
+        method: "POST",
+        body: form,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error ?? "アップロードに失敗しました");
+      }
+      const photo = data as Photo;
+      onChange({ ...report, photos: [...report.photos, photo] });
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "アップロードに失敗しました");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const canUpload = !readOnly && report.photos.length < 8;
   const slots = Array.from({ length: 8 });
 
   return (
@@ -213,9 +258,31 @@ function PhotosTab({ report, onChange }: { report: Report; onChange: (r: Report)
         })}
       </div>
 
-      <div className="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-700">
-        プロトタイプでは写真追加機能は省略しています。実際の実装ではカメラ画像の選択・追加が可能になります。
-      </div>
+      {!readOnly && (
+        <div className="mt-4 flex items-center gap-3">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleFileSelected}
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={!canUpload || uploading}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-700 hover:bg-blue-800 disabled:bg-blue-300 text-white rounded-lg transition-colors"
+          >
+            {uploading ? "アップロード中..." : "現地写真を追加"}
+          </button>
+          {report.photos.length >= 8 && (
+            <span className="text-xs text-slate-500">写真は最大8枚です</span>
+          )}
+          {uploadError && (
+            <span className="text-xs text-red-600">{uploadError}</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -300,7 +367,18 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           treatment: editedReport.treatment,
           preventiveAction: editedReport.preventiveAction,
           body: editedReport.body,
-          photos: editedReport.photos.map((p) => ({ id: p.id, photoLocationName: p.photoLocationName })),
+          photos: editedReport.photos.map((p) => ({
+            id: p.id,
+            imageUrl: p.imageUrl,
+            cameraName: p.cameraName,
+            capturedAt: p.capturedAt,
+            photoLocationName: p.photoLocationName,
+            blobContainer: p.blobContainer,
+            blobName: p.blobName,
+            caption: p.caption,
+            relevanceScore: p.relevanceScore,
+            observedFacts: p.observedFacts,
+          })),
         }),
       });
       const updated = await fetch(`/api/reports/${id}`).then((r) => r.json()) as Report;
@@ -469,7 +547,12 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           <ReportTab report={editedReport} onChange={isConfirmed ? () => {} : setEditedReport} />
         )}
         {activeTab === "photos" && (
-          <PhotosTab report={editedReport} onChange={isConfirmed ? () => {} : setEditedReport} />
+          <PhotosTab
+            report={editedReport}
+            onChange={isConfirmed ? () => {} : setEditedReport}
+            reportId={id}
+            readOnly={isConfirmed}
+          />
         )}
         {activeTab === "diff" && <DiffTab report={report} />}
       </div>

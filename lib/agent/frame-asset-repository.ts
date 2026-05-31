@@ -76,6 +76,75 @@ export async function searchFrameAssets(
   return result.recordset.map(rowToPhoto);
 }
 
+type TimeWindowSearchInput = {
+  facilityId: string;
+  occurredAt: string;
+  beforeSeconds: number;
+  afterSeconds: number;
+  targetOffsets: number[];
+  scenarioTags?: string[];
+};
+
+function pickClosestToTargets(
+  rows: FrameAssetRow[],
+  occurredAtMs: number,
+  targetOffsets: number[]
+): FrameAssetRow[] {
+  if (rows.length === 0) return [];
+  const picked = new Set<string>();
+  const result: FrameAssetRow[] = [];
+  for (const offset of targetOffsets) {
+    const targetMs = occurredAtMs + offset * 1000;
+    let best: FrameAssetRow | null = null;
+    let bestDiff = Infinity;
+    for (const row of rows) {
+      if (picked.has(row.id)) continue;
+      const diff = Math.abs(row.captured_at.getTime() - targetMs);
+      if (diff < bestDiff) {
+        best = row;
+        bestDiff = diff;
+      }
+    }
+    if (best) {
+      picked.add(best.id);
+      result.push(best);
+    }
+  }
+  return result;
+}
+
+export async function searchFrameAssetsByTimeWindow(
+  input: TimeWindowSearchInput
+): Promise<Photo[]> {
+  const occurredAtDate = new Date(input.occurredAt);
+  if (Number.isNaN(occurredAtDate.getTime())) return [];
+
+  const from = new Date(occurredAtDate.getTime() - input.beforeSeconds * 1000);
+  const to = new Date(occurredAtDate.getTime() + input.afterSeconds * 1000);
+
+  const pool = await getDbPool();
+  const result = await pool
+    .request()
+    .input("facilityId", sql.NVarChar, input.facilityId)
+    .input("from", sql.DateTime2, from)
+    .input("to", sql.DateTime2, to)
+    .query<FrameAssetRow>(`
+      select *
+      from frame_assets
+      where facility_id = @facilityId
+        and captured_at between @from and @to
+      order by captured_at asc
+    `);
+
+  const picked = pickClosestToTargets(
+    result.recordset,
+    occurredAtDate.getTime(),
+    input.targetOffsets
+  );
+
+  return picked.map(rowToPhoto);
+}
+
 export async function upsertFrameAsset(asset: Omit<FrameAsset, "createdAt">): Promise<void> {
   const pool = await getDbPool();
 
@@ -102,6 +171,9 @@ export async function upsertFrameAsset(asset: Omit<FrameAsset, "createdAt">): Pr
         update set
           camera_name = @cameraName,
           location_name = @locationName,
+          captured_at = @capturedAt,
+          frame_offset_seconds = @frameOffsetSeconds,
+          frame_index = @frameIndex,
           blob_container = @blobContainer,
           blob_name = @blobName,
           scenario_tags = @scenarioTags,

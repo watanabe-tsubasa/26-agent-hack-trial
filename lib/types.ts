@@ -27,12 +27,15 @@ export type FiveWTwoH = {
   howMuch: string;
 };
 
+export type PhotoSourceType = "camera_frame" | "uploaded_photo";
+
 export type Photo = {
   id: string;
   imageUrl: string;
   cameraName: string;
   capturedAt: string;
   photoLocationName: string;
+  sourceType?: PhotoSourceType;
   blobContainer?: string;
   blobName?: string;
   caption?: string;

@@ -10,23 +10,45 @@ const CAMERA_ID = "camera-kanda-office-2f-open-space";
 const CAMERA_NAME = "神田事務所 2階カメラ";
 const LOCATION_NAME = "神田事務所 2階オープンスペース";
 const FLOOR_LABEL = "2F";
-const SCENARIO_TAGS = [
+
+const FRAME_INTERVAL_SECONDS = 3;
+// 動画左上時刻に合わせる: 2026-05-26 15:05:21 JST = 2026-05-26 06:05:21 UTC
+const BASE_CAPTURED_AT = new Date("2026-05-26T06:05:21Z");
+
+// メイン事故 T = 2026-05-26 15:20:36 JST = frame-306.jpg
+// AI評価の余裕を考慮して周辺フレーム 298〜320 にメイン事故タグを付ける
+const MAIN_INCIDENT_WINDOW_START = 298;
+const MAIN_INCIDENT_WINDOW_END = 320;
+
+const COMMON_TAGS = [
+  "office",
+  "open-space",
+  "kanda-office",
+  "事務所",
+  "オープンスペース",
+];
+
+const MAIN_INCIDENT_TAGS = [
   "fall",
   "person-fall",
   "unable-to-stand",
   "assistance",
   "rescue",
-  "office",
-  "open-space",
-  "kanda-office",
+  "main-demo-incident",
   "転倒",
   "起き上がれない",
   "救助",
-  "事務所",
-  "オープンスペース",
+  "メイン事故",
 ];
-const FRAME_INTERVAL_SECONDS = 3;
-const BASE_CAPTURED_AT = new Date("2026-05-28T09:00:00Z");
+
+function buildScenarioTags(frameIndex: number): string[] {
+  const isMainIncidentWindow =
+    frameIndex >= MAIN_INCIDENT_WINDOW_START &&
+    frameIndex <= MAIN_INCIDENT_WINDOW_END;
+  return isMainIncidentWindow
+    ? [...COMMON_TAGS, ...MAIN_INCIDENT_TAGS]
+    : [...COMMON_TAGS];
+}
 
 const FRAMES_DIR = join(process.cwd(), "public", "generated-frames", "kanda-office");
 
@@ -78,7 +100,7 @@ async function seed() {
       frameIndex: idx,
       blobContainer: CONTAINER,
       blobName,
-      scenarioTags: [...SCENARIO_TAGS],
+      scenarioTags: buildScenarioTags(idx),
       description: `神田事務所動画から抽出 (フレーム ${idx})`,
     });
   }

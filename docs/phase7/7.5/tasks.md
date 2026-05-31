@@ -72,15 +72,15 @@
 
 - [x] tsc clean / pnpm test (**50/50 pass**) / pnpm build OK
 - [x] 副次フィックス: `package.json` の test script が `(app)` 以前の旧パス (`app/reports/...` / `app/admin/...`) を指していて silent skip されていた問題を修正。`utils.test.ts` 4 件が復活
-- [ ] 単発質問（「天井落下の事故は？」）が従来通り動く
-- [ ] 追質問「その中で神田事務所だけ」が前回 sources の reportId に絞って回答される
-- [ ] 「新しい会話を開始」で履歴がリセットされる
+- [x] 単発質問（「天井落下の事故は？」）が従来通り動く
+- [x] 追質問「その中で神田事務所だけ」が前回 sources の reportId に絞って回答される
+- [x] 「新しい会話を開始」で履歴がリセットされる
 
 ---
 
 ## 7. デプロイ
 
-- [ ] `git push origin main`
+- [x] `git push origin main`
 
 ---
 
@@ -106,7 +106,7 @@
 ### 動作確認
 
 - [x] tsc clean / **pnpm test 55/55 pass** / pnpm build OK
-- [ ] 本番デプロイ後、2 ターン目以降の質問が 400 にならずに回答される
+- [x] 本番デプロイ後、2 ターン目以降の質問が 400 にならずに回答される
 
 ---
 

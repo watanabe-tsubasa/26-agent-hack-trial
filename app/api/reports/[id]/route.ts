@@ -19,8 +19,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   if (!current) return Response.json({ error: "Not found" }, { status: 404 });
 
   const newFeedbacks = recordFeedbacks(current, updates);
-  const updatedPhotos = updates.photos
-    ? mergePhotos(current.photos, updates.photos)
+  const updatedPhotos = Array.isArray(updates.photos)
+    ? updates.photos
     : current.photos;
 
   const updated = {
@@ -36,14 +36,4 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
   await saveUserDraft(id, updated);
   return Response.json({ reportId: id, status: "updated", savedFeedback: true });
-}
-
-function mergePhotos(
-  current: { id: string; [key: string]: unknown }[],
-  patches: { id?: string; [key: string]: unknown }[]
-) {
-  return current.map((photo) => {
-    const patch = patches.find((p) => p.id === photo.id);
-    return patch ? { ...photo, ...patch } : photo;
-  });
 }
