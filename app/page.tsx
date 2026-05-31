@@ -37,9 +37,9 @@ export default function NewReportPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
-        <h2 className="text-xl font-bold text-slate-800">新規事故報告書の作成（phase3.5）</h2>
+        <h2 className="text-xl font-bold text-slate-800">新規事故報告書の作成</h2>
         <p className="text-sm text-slate-500 mt-1">
-          事故の概要を入力して、AIエージェントに報告書の作成を依頼します
+          事故の概要を入力して、事故報お任せグッジョくんに報告書の作成を依頼します
         </p>
       </div>
 
@@ -51,7 +51,7 @@ export default function NewReportPage() {
           </svg>
         </div>
         <p className="text-sm text-blue-700">
-          AIエージェントが関連するカメラ画像を取得・解析し、事故報告書のドラフトを自動生成します。
+          事故報お任せグッジョくんが関連するカメラ画像を取得・解析し、事故報告書のドラフトを自動生成します。
           生成後に内容を確認・修正できます。
         </p>
       </div>
@@ -179,14 +179,14 @@ export default function NewReportPage() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                AIエージェントに送信中...
+                グッジョくんに送信中...
               </>
             ) : (
               <>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                AIエージェントに作成を依頼
+                グッジョくんに作成を依頼
               </>
             )}
           </button>

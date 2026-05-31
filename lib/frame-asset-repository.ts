@@ -40,31 +40,40 @@ function rowToFrameAsset(row: FrameAssetRow): FrameAsset {
   };
 }
 
-export async function searchFrameAssets(scenarioTag: string): Promise<Photo[]> {
+function rowToPhoto(row: FrameAssetRow): Photo {
+  const asset = rowToFrameAsset(row);
+  return {
+    id: asset.id,
+    imageUrl: getBlobUrl(asset.blobContainer, asset.blobName),
+    cameraName: asset.cameraName,
+    capturedAt: asset.capturedAt,
+    photoLocationName: asset.locationName,
+    blobContainer: asset.blobContainer,
+    blobName: asset.blobName,
+  };
+}
+
+export async function searchFrameAssets(
+  scenarioTag: string | null,
+  facilityId: string
+): Promise<Photo[]> {
   const pool = await getDbPool();
+  const request = pool.request().input("facilityId", sql.NVarChar, facilityId);
 
-  const result = await pool
-    .request()
-    .input("tag", sql.NVarChar, `%${scenarioTag}%`)
-    .query<FrameAssetRow>(`
-      select top 8 *
-      from frame_assets
-      where scenario_tags like @tag
-      order by captured_at asc
-    `);
+  let where = "facility_id = @facilityId";
+  if (scenarioTag) {
+    request.input("tag", sql.NVarChar, `%${scenarioTag}%`);
+    where += " and scenario_tags like @tag";
+  }
 
-  return result.recordset.map((row) => {
-    const asset = rowToFrameAsset(row);
-    return {
-      id: asset.id,
-      imageUrl: getBlobUrl(asset.blobContainer, asset.blobName),
-      cameraName: asset.cameraName,
-      capturedAt: asset.capturedAt,
-      photoLocationName: asset.locationName,
-      blobContainer: asset.blobContainer,
-      blobName: asset.blobName,
-    };
-  });
+  const result = await request.query<FrameAssetRow>(`
+    select top 8 *
+    from frame_assets
+    where ${where}
+    order by captured_at asc
+  `);
+
+  return result.recordset.map(rowToPhoto);
 }
 
 export async function upsertFrameAsset(asset: Omit<FrameAsset, "createdAt">): Promise<void> {

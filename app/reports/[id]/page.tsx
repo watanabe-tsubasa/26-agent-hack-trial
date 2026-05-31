@@ -2,124 +2,12 @@
 
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
-import type { ProcessingStep, Report } from "@/lib/types";
+import type { Report } from "@/lib/types";
 import { EditableField } from "./_components/EditableField";
-import { isProcessingStatus, resolveStatusLabel } from "./_components/processing-state";
-
-
-// ── Processing screen ────────────────────────────────────────────────────────
-
-
-function ProcessingScreen({ reportId }: { reportId: string }) {
-  const [steps, setSteps] = useState<ProcessingStep[]>([]);
-  const [statusLabel, setStatusLabel] = useState("処理の開始を待っています...");
-  const [done, setDone] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-
-  useEffect(() => {
-    const poll = async () => {
-      const res = await fetch(`/api/reports/${reportId}/status`);
-      if (!res.ok) return;
-      const data = await res.json();
-      setSteps(data.steps ?? []);
-      setStatusLabel(resolveStatusLabel(data.status));
-      if (!data.isProcessing) {
-        if (data.status === "failed") {
-          setFailed(true);
-          setErrorMessage(data.errorMessage ?? "不明なエラーが発生しました");
-        } else {
-          setDone(true);
-        }
-      }
-    };
-    poll();
-    const timer = setInterval(poll, 1500);
-    return () => clearInterval(timer);
-  }, [reportId]);
-
-  useEffect(() => {
-    if (done) {
-      const t = setTimeout(() => window.location.reload(), 500);
-      return () => clearTimeout(t);
-    }
-  }, [done]);
-
-  return (
-    <div className="max-w-lg mx-auto mt-8">
-      <div className="relative rounded-2xl overflow-hidden shadow-xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-900" />
-        <div className="absolute inset-0 backdrop-blur-sm bg-white/5" />
-        <div className="relative p-8">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/20 backdrop-blur mb-4">
-              <svg className="w-7 h-7 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <h2 className="text-white font-bold text-xl">AIエージェントが処理中</h2>
-            <p className="text-blue-200 text-sm mt-1">{statusLabel}</p>
-          </div>
-
-          {failed ? (
-            <div className="bg-red-500/20 border border-red-400/40 rounded-xl p-4 text-center">
-              <p className="text-red-300 font-medium text-sm">処理に失敗しました</p>
-              {errorMessage && <p className="text-red-200 text-xs mt-1">{errorMessage}</p>}
-              <a href="/" className="mt-3 inline-block text-white underline text-sm">トップに戻る</a>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {steps.length > 0 ? steps.map((step, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center">
-                    {step.status === "completed" ? (
-                      <div className="w-6 h-6 rounded-full bg-green-400 flex items-center justify-center">
-                        <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                    ) : step.status === "in_progress" ? (
-                      <div className="w-6 h-6 rounded-full bg-white/30 border-2 border-white flex items-center justify-center">
-                        <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                      </div>
-                    ) : (
-                      <div className="w-6 h-6 rounded-full bg-white/10 border border-white/20" />
-                    )}
-                  </div>
-                  <span className={`text-sm ${step.status === "completed" ? "text-green-300" : step.status === "in_progress" ? "text-white font-medium" : "text-white/40"}`}>
-                    {step.label}
-                  </span>
-                  {step.status === "in_progress" && (
-                    <span className="ml-auto">
-                      <svg className="animate-spin w-4 h-4 text-white/60" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                    </span>
-                  )}
-                </div>
-              )) : (
-                <div className="flex items-center justify-center gap-3 py-4">
-                  <svg className="animate-spin w-5 h-5 text-white/60" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  <span className="text-white/60 text-sm">待機中...</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {done && (
-            <div className="mt-6 text-center">
-              <p className="text-green-300 font-medium text-sm">完了しました。画面を更新しています...</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
+import { isProcessingStatus } from "./_components/processing-state";
+import { ProcessingScreen } from "./_components/ProcessingScreen";
+import { GoodjobAvatar } from "@/components/goodjob-avatar";
+import { GOODJOB_AFTER_CONFIRM_COPY, GOODJOB_NAME } from "@/lib/goodjob-copy";
 
 // ── Report editor ─────────────────────────────────────────────────────────────
 
@@ -530,16 +418,25 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         </div>
       )}
 
-      {/* AI note */}
+      {/* Goodjob note */}
       {!isConfirmed && (
-        <div className="mb-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-4 flex gap-3">
-          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-            <span className="text-blue-600 font-bold text-xs">AI</span>
-          </div>
+        <div className="mb-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-4 flex items-center gap-3">
+          <GoodjobAvatar tone="success" size="md" className="flex-shrink-0" />
           <div>
-            <p className="text-sm font-medium text-blue-800">AIドラフトを確認・修正してください</p>
-            <p className="text-xs text-blue-600 mt-0.5">内容を確認・修正した上で「この内容で確定」を押してください。修正内容はAI改善に活用されます。</p>
+            <p className="text-sm font-medium text-blue-800">
+              {GOODJOB_NAME}の下書きを確認してください
+            </p>
+            <p className="text-xs text-blue-600 mt-0.5">
+              内容を確認・修正した上で「この内容で確定」を押してください。修正内容は施設ナレッジ改善に活用されます。
+            </p>
           </div>
+        </div>
+      )}
+
+      {isConfirmed && (
+        <div className="mb-4 rounded-xl bg-emerald-50 border border-emerald-200 p-4 flex items-center gap-3">
+          <GoodjobAvatar tone="success" size="md" className="flex-shrink-0" />
+          <p className="text-sm text-emerald-800">{GOODJOB_AFTER_CONFIRM_COPY}</p>
         </div>
       )}
 

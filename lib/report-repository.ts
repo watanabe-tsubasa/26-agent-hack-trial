@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { getDbPool, sql } from "./db";
+import { buildReportSearchClause, type ReportSearchQuery } from "./report-search";
 import type { CreateReportInput, Report } from "./types";
 
 export async function createQueuedReport(input: CreateReportInput): Promise<string> {
@@ -211,17 +212,37 @@ function rowToPartialReport(row: ListRow): Report {
   };
 }
 
-export async function getAllReports(): Promise<Report[]> {
+export async function getAllReports(facilityId?: string): Promise<Report[]> {
+  if (facilityId) {
+    return searchReports({ facilityId });
+  }
   const pool = await getDbPool();
+  const result = await pool.request().query<ListRow>(`
+    select id, status, summary, created_at, updated_at,
+           ai_draft_json, user_draft_json
+    from reports
+    order by created_at desc
+  `);
+  return result.recordset.map(rowToPartialReport);
+}
 
-  const result = await pool
-    .request()
-    .query<ListRow>(`
-      select id, status, summary, created_at, updated_at,
-             ai_draft_json, user_draft_json
-      from reports
-      order by created_at desc
-    `);
-
+export async function searchReports(query: ReportSearchQuery): Promise<Report[]> {
+  const pool = await getDbPool();
+  const { where, params } = buildReportSearchClause(query);
+  const request = pool.request();
+  for (const p of params) {
+    if (p.value instanceof Date) {
+      request.input(p.name, sql.DateTime2, p.value);
+    } else {
+      request.input(p.name, sql.NVarChar, p.value);
+    }
+  }
+  const result = await request.query<ListRow>(`
+    select top 200 id, status, summary, created_at, updated_at,
+           ai_draft_json, user_draft_json
+    from reports
+    ${where}
+    order by created_at desc
+  `);
   return result.recordset.map(rowToPartialReport);
 }

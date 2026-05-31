@@ -1,24 +1,39 @@
 import Link from "next/link";
-import type { Report } from "@/lib/types";
+import { searchReports } from "@/lib/report-repository";
+import { requireCurrentSite } from "@/lib/demo-auth";
 import { formatDate, resolveStatusColor, resolveStatusLabel } from "./_components/report-list-utils";
+import { ReportSearchBar } from "./_components/search-bar";
 
-async function getReports(): Promise<Report[]> {
-  const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-  const res = await fetch(`${base}/api/reports`, { cache: "no-store" });
-  if (!res.ok) return [];
-  return res.json();
+type SP = { [k: string]: string | string[] | undefined };
+
+function first(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) return value[0];
+  return value;
 }
 
-
-export default async function ReportsPage() {
-  const reports = await getReports();
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SP>;
+}) {
+  const site = await requireCurrentSite();
+  const sp = await searchParams;
+  const reports = await searchReports({
+    facilityId: site.facilityId,
+    keyword: first(sp.keyword),
+    status: first(sp.status),
+    from: first(sp.from),
+    to: first(sp.to),
+  });
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-bold text-slate-800">事故報告書一覧</h2>
-          <p className="text-sm text-slate-500 mt-1">全 {reports.length} 件</p>
+          <p className="text-sm text-slate-500 mt-1">
+            {site.name} ・ {reports.length} 件
+          </p>
         </div>
         <Link
           href="/"
@@ -30,6 +45,8 @@ export default async function ReportsPage() {
           新規作成
         </Link>
       </div>
+
+      <ReportSearchBar />
 
       {reports.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">

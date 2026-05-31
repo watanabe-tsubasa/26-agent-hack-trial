@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# video sources / generated frames
+/public/generated-frames
+videos/*
+!videos/.gitkeep
+kanda-office-frames.zip

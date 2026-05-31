@@ -6,7 +6,6 @@ export const DEFAULT_FORM = {
   hasVictim: false,
   recoveryStatus: "未復旧",
   amountImpact: "未算定",
-  facilityId: "store-001",
 };
 
 export type NewReportForm = typeof DEFAULT_FORM;
