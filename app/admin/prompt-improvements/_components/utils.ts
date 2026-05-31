@@ -11,8 +11,6 @@ export const CATEGORY_LABELS: Record<string, string> = {
   other: "その他",
 };
 
-export const LOCATION_KEY = "store-001";
-
 export function formatDateTime(iso: string | null): string {
   if (!iso) return "-";
   const date = new Date(iso);

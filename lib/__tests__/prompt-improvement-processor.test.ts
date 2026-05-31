@@ -5,7 +5,7 @@ import { runPromptImprovementJob } from "../prompt-improvement-processor";
 test("runPromptImprovementJob marks run failed when no corrections", async () => {
   const calls: string[] = [];
   await runPromptImprovementJob(
-    { runId: "r1", locationKey: "store-001" },
+    { runId: "r1", locationKey: "aeon-mall-kanda" },
     {
       getCorrections: async () => [],
       buildSummary: () => { throw new Error("should not be called"); },
@@ -23,10 +23,10 @@ test("runPromptImprovementJob marks run failed when no corrections", async () =>
 test("runPromptImprovementJob completes run when proposal is generated", async () => {
   const calls: string[] = [];
   await runPromptImprovementJob(
-    { runId: "r2", locationKey: "store-001" },
+    { runId: "r2", locationKey: "aeon-mall-kanda" },
     {
       getCorrections: async () => [{ reportId: "rep-1", items: [] }],
-      buildSummary: () => ({ locationKey: "store-001", correctionCount: 1, frequentFields: [], examples: [] }),
+      buildSummary: () => ({ locationKey: "aeon-mall-kanda", correctionCount: 1, frequentFields: [], examples: [] }),
       generateOverride: async () => ({
         title: "t",
         overrideText: "body",

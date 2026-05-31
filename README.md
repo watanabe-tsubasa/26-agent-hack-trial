@@ -12,13 +12,13 @@
 ```sh
 curl -X POST "https://agent-hack-trial.victoriousflower-29957f8a.japaneast.azurecontainerapps.io/api/admin/run-prompt-improvement" \
   -H "Content-Type: application/json" \
-  -d '{"locationKey":"store-001"}'
+  -d '{"locationKey":"aeon-mall-kanda"}'
 ```
 
 ## location-prompt-overrides
 
 ```sh
-curl "https://agent-hack-trial.victoriousflower-29957f8a.japaneast.azurecontainerapps.io/api/location-prompt-overrides?locationKey=store-001"
+curl "https://agent-hack-trial.victoriousflower-29957f8a.japaneast.azurecontainerapps.io/api/location-prompt-overrides?locationKey=aeon-mall-kanda"
 ```
 
 - approve

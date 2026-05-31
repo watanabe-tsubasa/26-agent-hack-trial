@@ -5,7 +5,7 @@ import { upsertFrameAsset } from "../lib/frame-asset-repository";
 import { getDbPool } from "../lib/db";
 
 const CONTAINER = "frames";
-const FACILITY_ID = "store-001";
+const FACILITY_ID = "aeon-mall-kanda";
 
 // Blob パスに "ceiling" / "escalator" を含めることで mock-vision.ts のURL判定が継続動作する
 const SEED_DATA = [
@@ -18,7 +18,7 @@ const SEED_DATA = [
     capturedAt: "2026-05-21T10:15:00Z",
     frameIndex: 1,
     blobName:
-      "store-001/camera-escalator-2f-1f-down/escalator-guard-panel/demo/frame-0001.png",
+      "aeon-mall-kanda/camera-escalator-2f-1f-down/escalator-guard-panel/demo/frame-0001.png",
     localFile: "escalator-guard-panel-fall.png",
     scenarioTags: ["escalator", "guard-panel"],
     description: "エスカレーター三角部付近を撮影したフレーム",
@@ -32,7 +32,7 @@ const SEED_DATA = [
     capturedAt: "2026-05-21T11:25:00Z",
     frameIndex: 1,
     blobName:
-      "store-001/camera-shopping-center-ceiling-1f/ceiling-board-fall/demo/frame-0001.png",
+      "aeon-mall-kanda/camera-shopping-center-ceiling-1f/ceiling-board-fall/demo/frame-0001.png",
     localFile: "shopping-center-ceiling-board-fall.png",
     scenarioTags: ["ceiling", "board-fall"],
     description: "ショッピングセンター共用通路を撮影したフレーム",
@@ -46,7 +46,7 @@ const SEED_DATA = [
     capturedAt: "2026-05-21T13:35:00Z",
     frameIndex: 1,
     blobName:
-      "store-001/camera-tenant-2f-lighting/lighting-fixture-fall/demo/frame-0001.png",
+      "aeon-mall-kanda/camera-tenant-2f-lighting/lighting-fixture-fall/demo/frame-0001.png",
     localFile: "tenant-lighting-fixture-fall.png",
     scenarioTags: ["lighting", "fixture-fall"],
     description: "2階テナント内の間接照明付近を撮影したフレーム",
@@ -60,7 +60,7 @@ const SEED_DATA = [
     capturedAt: "2026-05-21T15:10:00Z",
     frameIndex: 1,
     blobName:
-      "store-001/camera-food-area-cold-case/polisher-glass-damage/demo/frame-0001.png",
+      "aeon-mall-kanda/camera-food-area-cold-case/polisher-glass-damage/demo/frame-0001.png",
     localFile: "polisher-cold-case-glass-damage.png",
     scenarioTags: ["polisher", "glass-damage"],
     description: "食品売場の冷ケース付近を撮影したフレーム",

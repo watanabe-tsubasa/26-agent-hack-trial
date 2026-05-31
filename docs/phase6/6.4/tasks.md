@@ -10,7 +10,7 @@
 
 ## 1. ステップ定義の見直し
 
-- [ ] `lib/generation-steps.ts`（新規）
+- [x] `lib/generation-steps.ts`（新規）
   ```ts
   export const GENERATION_STEPS = [
     { key: "parse_input",          label: "事故概要を整理しています",
@@ -25,28 +25,28 @@
       description: "AI下書きと写真台帳を確認・修正できる状態にしています。" },
   ] as const;
   ```
-- [ ] 既存 `PROCESSING_STEPS`（`lib/types.ts`）は破棄せず、Server 側互換のため残す（または移行）
+- [x] 既存 `PROCESSING_STEPS`（`lib/types.ts`）は破棄せず、Server 側互換のため残す（または移行）
 
 ---
 
 ## 2. ステップ進行のフロント疑似演出
 
-- [ ] バックエンドが細かいステップを返さないため、フロントで polling 結果 (`status`) からステップ進行を推定する pure 関数を `lib/generation-steps.ts` に追加
+- [x] バックエンドが細かいステップを返さないため、フロントで polling 結果 (`status`) からステップ進行を推定する pure 関数を `lib/generation-steps.ts` に追加
   - `deriveStepStates(status, elapsedMs)`
   - `queued` → step 0 in_progress, 残り pending
   - `generating_report` → 経過時間で 1〜4 を順次 in_progress / completed
   - `waiting_human_review` → 全部 completed
   - `failed` → 進行中の step を failed に
-- [ ] `lib/__tests__/generation-steps.test.ts` — pure 関数のユニットテスト
+- [x] `lib/__tests__/generation-steps.test.ts` — pure 関数のユニットテスト
 
 ---
 
 ## 3. UI コンポーネント分割
 
-- [ ] `app/reports/[id]/_components/report-skeleton-background.tsx`
+- [x] `app/reports/[id]/_components/report-skeleton-background.tsx`
   - 事故報のレイアウトをスケルトン表示（タイトル、5W2H、写真台帳の枠だけ）
   - 透過度 70%, 軽い blur で背景に置く
-- [ ] `app/reports/[id]/_components/agent-progress-dialog.tsx`
+- [x] `app/reports/[id]/_components/agent-progress-dialog.tsx`
   - グラスモーフィズム調のダイアログ
   - `backdrop-blur-xl bg-white/60 border-white/30 rounded-3xl shadow-2xl`
   - グッジョくんアイコン領域（6.5 で差し替え可能なように `<AgentAvatar />` で分離）
@@ -56,7 +56,7 @@
 
 ## 4. ProcessingScreen 差し替え
 
-- [ ] `app/reports/[id]/page.tsx`
+- [x] `app/reports/[id]/page.tsx`
   - 既存 `ProcessingScreen` を新コンポーネント (`ReportSkeletonBackground` + `AgentProgressDialog`) で置き換え
   - polling 間隔は 1500ms から 1000ms へ（短くし演出を滑らかに）
   - 経過時間（startTime）をフロントで保持し `deriveStepStates` に渡す
@@ -65,22 +65,22 @@
 
 ## 5. 文言調整
 
-- [ ] 6.5 と連動して全文言を「グッジョくんが…」に変更
-- [ ] 完了文言: 「下書きが完成しました。グッジョくんの下書きを確認してください」
-- [ ] 失敗文言: 「グッジョくんが下書き作成に失敗しました」
+- [x] 6.5 と連動して全文言を「グッジョくんが…」に変更
+- [x] 完了文言: 「下書きが完成しました。グッジョくんの下書きを確認してください」
+- [x] 失敗文言: 「グッジョくんが下書き作成に失敗しました」
 
 ---
 
 ## 6. 動作確認
 
-- [ ] 新規事故報作成 → 5ステップが順に進む演出が見える
-- [ ] 約10秒以内に最後のステップまで完了 → 編集画面に遷移
-- [ ] 途中で `failed` になった場合、失敗表示が出る
-- [ ] モバイル幅でもダイアログがはみ出さない
+- [x] 新規事故報作成 → 5ステップが順に進む演出が見える
+- [x] 約10秒以内に最後のステップまで完了 → 編集画面に遷移
+- [x] 途中で `failed` になった場合、失敗表示が出る
+- [x] モバイル幅でもダイアログがはみ出さない
 
 ---
 
 ## 7. デプロイ
 
-- [ ] `git push origin main`
-- [ ] 本番で動作確認
+- [x] `git push origin main`
+- [x] 本番で動作確認
