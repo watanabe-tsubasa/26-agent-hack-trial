@@ -131,6 +131,8 @@ export function ReportRagChatClient() {
                             <Link
                               key={s.reportId}
                               href={s.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
                               className="block px-3 py-2 rounded-lg border border-slate-200 hover:border-amber-400 hover:bg-amber-50 text-sm"
                             >
                               <div className="font-medium text-slate-800 truncate">

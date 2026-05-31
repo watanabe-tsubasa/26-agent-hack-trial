@@ -50,16 +50,16 @@
 ## 5. 動作確認
 
 - [x] tsc clean / 44 tests pass / build OK
-- [ ] admin / goodjob でログイン → サイドバーに「施設管理RAG」が表示
-- [ ] 質問入力 → 回答が表示される、source カードがリンク可能
-- [ ] reindex ボタン押下 → 件数が表示される
-- [ ] site_user で `/admin/report-rag` にアクセス → `/` に redirect
+- [x] admin / goodjob でログイン → サイドバーに「施設管理RAG」が表示
+- [x] 質問入力 → 回答が表示される、source カードがリンク可能
+- [x] reindex ボタン押下 → 件数が表示される
+- [x] site_user で `/admin/report-rag` にアクセス → `/` に redirect
 
 ---
 
 ## 6. デプロイ
 
-- [ ] `git push origin main`
+- [x] `git push origin main`
 
 ---
 
@@ -77,6 +77,6 @@
   - 編集中のペーストミスで混入していた壊れた行も復旧
 - [x] grep `temperature` 全体確認 — 残存は `lib/agent/accident-report-ai.ts` のコメント (`// temperature: 0.2,`) のみ、コードからは消えている
 - [x] tsc clean / pnpm test (44 pass) / pnpm build pass
-- [ ] 本番デプロイ後、admin チャットで「事故報が多いサイトはどこですか？」「神田事務所で救助対応が必要だった事故は？」が回答されることを確認
+- [x] 本番デプロイ後、admin チャットで「事故報が多いサイトはどこですか？」「神田事務所で救助対応が必要だった事故は？」が回答されることを確認
 
 > Note: 会話履歴を引き継ぐ Responses API の `previous_response_id` / 自前履歴 input は 7.5 以降の余力対応とする（issue.md 参照）。
