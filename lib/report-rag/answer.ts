@@ -61,24 +61,24 @@ function renderUserPrompt(input: AnswerInput): string {
   ].join("\n");
 }
 
+// Use the EasyInputMessage form (plain string content) for history items.
+// Reason: Responses API rejects `{ type: "input_text" }` parts inside an
+// assistant turn (it requires `output_text`/`refusal` which need extra fields
+// like id/status). Passing `content: string` lets the SDK encode each role
+// correctly without us replicating ResponseOutputMessage shape.
 type ResponsesInputItem = {
   role: "user" | "assistant";
-  content: { type: "input_text"; text: string }[];
+  content: string;
 };
 
+function toHistoryItem(h: ChatHistoryItem): ResponsesInputItem {
+  return { role: h.role, content: h.content };
+}
+
 function buildInputItems(input: AnswerInput): ResponsesInputItem[] {
-  const items: ResponsesInputItem[] = [];
   const history = (input.history ?? []).slice(-HISTORY_LIMIT);
-  for (const h of history) {
-    items.push({
-      role: h.role,
-      content: [{ type: "input_text", text: h.content }],
-    });
-  }
-  items.push({
-    role: "user",
-    content: [{ type: "input_text", text: renderUserPrompt(input) }],
-  });
+  const items: ResponsesInputItem[] = history.map(toHistoryItem);
+  items.push({ role: "user", content: renderUserPrompt(input) });
   return items;
 }
 
@@ -97,4 +97,4 @@ export async function generateRagAnswer(input: AnswerInput): Promise<{ answer: s
   return { answer };
 }
 
-export const __test__ = { renderUserPrompt, buildInputItems };
+export const __test__ = { renderUserPrompt, buildInputItems, toHistoryItem };

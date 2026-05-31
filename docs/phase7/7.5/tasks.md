@@ -84,7 +84,33 @@
 
 ---
 
-## 8. 後続スコープ（今回はやらない）
+## 8. フォローアップ: assistant 履歴の type 不整合修正
+
+> 背景: 本番で 2 ターン目以降に `400 Invalid value: 'input_text'. Supported values are: 'output_text' and 'refusal'.`。
+> 履歴を Responses API に渡す際、assistant role の content に `{ type: "input_text", text }` を使っていたのが原因。
+> Responses API では assistant turn の content は `output_text` / `refusal` のみ許可される。
+> ただし `ResponseOutputMessage` 型を満たすには `id` / `status` / `type: "message"` も必要で、毎ターン人工的に組み立てるのは脆い。
+
+- [x] `lib/report-rag/answer.ts`
+  - 履歴・current prompt とも **`EasyInputMessage` 形式 (plain string content)** に統一
+  - `content: string | ContentList` のうち、`string` を選ぶことで input_text / output_text の指定問題を回避
+  - role ごとの SDK 内部エンコーディングに委ねる（issue.md の方針より一段シンプル）
+  - 型定義は最小化 (`{ role: "user" | "assistant"; content: string }`)
+  - `toHistoryItem` を pure 関数として export（テスト用）
+- [x] `lib/__tests__/answer-history.test.ts`（5 tests）
+  - user/assistant の role 保持
+  - 履歴 → current prompt の順序
+  - `HISTORY_LIMIT=6` 上限
+  - 全ての content が string であること（regression guard）
+
+### 動作確認
+
+- [x] tsc clean / **pnpm test 55/55 pass** / pnpm build OK
+- [ ] 本番デプロイ後、2 ターン目以降の質問が 400 にならずに回答される
+
+---
+
+## 9. 後続スコープ（今回はやらない）
 
 > 余力でやる候補。要件が固まったら別タスクで切り出す。
 
@@ -92,3 +118,4 @@
 - 集計回答の structuredData 返却 + UI 表形式
 - source card に「この事故について質問」「このサイトで絞る」アクション
 - 送信中のグッジョくん表示リッチ化
+- 検索 topK / score threshold 調整、回答本文で使った sources のみ返す（issue.md の追加観点 — 「転倒事故」query に天井落下が混入する件）
