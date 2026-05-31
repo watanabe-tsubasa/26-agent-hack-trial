@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { MessageSquarePlus, Send } from "lucide-react";
+import { MessageSquarePlus } from "lucide-react";
 import { GoodjobAvatar } from "@/components/goodjob-avatar";
 import { ReindexButton } from "./ReindexButton";
+import { ChatInputForm } from "./ChatInputForm";
+import { AppEnv } from "@/lib/env";
 
 type ChatSource = {
   reportId: string;
@@ -51,7 +53,11 @@ function findLatestAssistantSources(messages: ChatMessage[]): ChatSource[] {
   return [];
 }
 
-export function ReportRagChatClient() {
+interface ReportRagChatClientProps {
+  env: AppEnv;
+}
+
+export function ReportRagChatClient({ env }: ReportRagChatClientProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -108,8 +114,8 @@ export function ReportRagChatClient() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
+    <div className="w-full max-w-4xl mx-auto flex-1 min-h-0 flex flex-col gap-6">
+      <div className="flex items-center gap-3 shrink-0">
         <GoodjobAvatar tone="investigating" size="md" />
         <div>
           <h2 className="text-xl font-bold text-slate-800">施設管理RAG</h2>
@@ -120,15 +126,18 @@ export function ReportRagChatClient() {
         </div>
       </div>
 
-      <ReindexButton />
+      {env === "local" && (
+        <div className="shrink-0">
+          <ReindexButton />
+        </div>
+      )}
 
-      <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-slate-500">
-            {messages.length === 0
-              ? "新しい会話を開始しています"
-              : `会話 ${messages.length} 件`}
-          </p>
+      <div className="bg-white rounded-xl border border-slate-200 p-5 flex-1 min-h-0 flex flex-col gap-4">
+        {messages.length == 0 || (
+          <div className="flex items-center justify-between shrink-0">
+            <p className="text-xs text-slate-500">
+              {`会話 ${messages.length} 件`}
+            </p>
           <button
             type="button"
             onClick={resetConversation}
@@ -138,27 +147,36 @@ export function ReportRagChatClient() {
             <MessageSquarePlus className="w-3.5 h-3.5" />
             新しい会話を開始
           </button>
-        </div>
+        </div>)}
 
         {messages.length === 0 ? (
-          <div className="text-sm text-slate-500">
-            <p className="mb-2">以下のような質問ができます:</p>
-            <div className="flex flex-wrap gap-2">
-              {SUGGESTED_QUESTIONS.map((q) => (
-                <button
-                  key={q}
-                  type="button"
-                  onClick={() => send(q)}
-                  disabled={loading}
-                  className="text-xs px-3 py-1.5 rounded-full border border-slate-300 hover:border-amber-400 hover:bg-amber-50 disabled:opacity-50"
-                >
-                  {q}
-                </button>
-              ))}
+          <div className="flex-1 min-h-0 overflow-y-auto text-sm text-slate-500">
+            <div className="justify-center h-full flex flex-col gap-4">
+              <p className="mb-2">以下のような質問ができます:</p>
+              <div className="flex flex-wrap gap-2">
+                {SUGGESTED_QUESTIONS.map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => send(q)}
+                    disabled={loading}
+                    className="text-xs px-3 py-1.5 rounded-full border border-slate-300 hover:border-amber-400 hover:bg-amber-50 disabled:opacity-50"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+              <ChatInputForm
+                value={input}
+                onChange={setInput}
+                onSubmit={() => send(input)}
+                disabled={loading}
+              />
             </div>
+            
           </div>
         ) : (
-          <ul className="space-y-4">
+          <ul className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1">
             {messages.map((m, i) => (
               <li key={i}>
                 {m.role === "user" ? (
@@ -204,6 +222,7 @@ export function ReportRagChatClient() {
                   </div>
                 )}
               </li>
+              
             ))}
             {loading && (
               <li className="flex gap-3">
@@ -216,30 +235,14 @@ export function ReportRagChatClient() {
           </ul>
         )}
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            send(input);
-          }}
-          className="flex gap-2 pt-2 border-t border-slate-100"
-        >
-          <input
-            type="text"
+        {messages.length === 0 || (
+          <ChatInputForm
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="グッジョくんに質問する..."
+            onChange={setInput}
+            onSubmit={() => send(input)}
             disabled={loading}
-            className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
           />
-          <button
-            type="submit"
-            disabled={loading || !input.trim()}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white text-sm font-medium"
-          >
-            <Send className="w-4 h-4" />
-            送信
-          </button>
-        </form>
+        )}
       </div>
     </div>
   );

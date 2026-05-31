@@ -16,7 +16,7 @@ export function AppShell({ initialSession, children }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="h-dvh bg-slate-50 flex flex-col overflow-hidden">
       <AppHeader
         session={initialSession}
         sidebarOpen={sidebarOpen}
@@ -25,7 +25,7 @@ export function AppShell({ initialSession, children }: Props) {
       />
       <div className="flex flex-1 min-h-0">
         <AppSidebar open={sidebarOpen} session={initialSession} />
-        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        <main className="min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col">{children}</main>
       </div>
       <MobileNavDrawer
         open={mobileOpen}
