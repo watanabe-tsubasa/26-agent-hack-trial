@@ -13,6 +13,15 @@ import {
   failPromptImprovementRun,
 } from "./prompt-improvement-run-repository";
 import type { JsonDiffItem } from "./json-diff";
+import type { KnowledgeImprovementStepKey } from "./knowledge-improvement-steps";
+import type { AgentEventState } from "./agent-event-log";
+
+export type KnowledgeStepReporter = (event: {
+  stepKey: KnowledgeImprovementStepKey;
+  state: AgentEventState;
+  metadata?: Record<string, unknown>;
+  errorMessage?: string;
+}) => void | Promise<void>;
 
 export async function getCorrectionsForLocation(locationKey: string): Promise<CorrectionDiffSet[]> {
   const pool = await getDbPool();
@@ -62,10 +71,18 @@ export async function runPromptImprovementJob(
     runId: string;
     locationKey: string;
   },
-  deps: PromptImprovementDeps = defaultDeps
+  deps: PromptImprovementDeps = defaultDeps,
+  onStep?: KnowledgeStepReporter
 ): Promise<void> {
+  let currentStep: KnowledgeImprovementStepKey = "collect_corrections";
   try {
+    await onStep?.({ stepKey: "collect_corrections", state: "started" });
     const diffSets = await deps.getCorrections(locationKey);
+    await onStep?.({
+      stepKey: "collect_corrections",
+      state: "completed",
+      metadata: { correctionCount: diffSets.length },
+    });
 
     if (diffSets.length === 0) {
       await deps.failRun({
@@ -75,8 +92,15 @@ export async function runPromptImprovementJob(
       return;
     }
 
+    currentStep = "analyze_patterns";
+    await onStep?.({ stepKey: "analyze_patterns", state: "started" });
     const summary = deps.buildSummary(locationKey, diffSets);
+    await onStep?.({ stepKey: "analyze_patterns", state: "completed" });
+
+    currentStep = "generate_knowledge";
+    await onStep?.({ stepKey: "generate_knowledge", state: "started" });
     const proposal = await deps.generateOverride(summary);
+    await onStep?.({ stepKey: "generate_knowledge", state: "completed" });
 
     const analysisJson = JSON.stringify({
       summary: proposal.summary,
@@ -85,6 +109,8 @@ export async function runPromptImprovementJob(
       riskNotes: proposal.riskNotes,
     });
 
+    currentStep = "prepare_review";
+    await onStep?.({ stepKey: "prepare_review", state: "started" });
     const overrideId = await deps.createDraft({
       locationKey,
       title: proposal.title,
@@ -109,8 +135,10 @@ export async function runPromptImprovementJob(
       summaryJson: JSON.stringify(summary),
       proposedOverrideId: overrideId,
     });
+    await onStep?.({ stepKey: "prepare_review", state: "completed" });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    await onStep?.({ stepKey: currentStep, state: "failed", errorMessage: message });
     await deps.failRun({ id: runId, errorMessage: message });
     throw err;
   }

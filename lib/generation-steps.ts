@@ -119,6 +119,27 @@ export function deriveStepStates(
   return GENERATION_STEPS.map((step) => ({ step, state: "pending" as StepState }));
 }
 
+type AgentEventLike = {
+  stepKey: string;
+  state: "started" | "completed" | "failed";
+};
+
+export function deriveStepStatesFromEvents(events: AgentEventLike[]): StepStatusSnapshot[] {
+  const lastByStep = new Map<string, AgentEventLike>();
+  for (const e of events) lastByStep.set(e.stepKey, e);
+  return GENERATION_STEPS.map((step) => {
+    const e = lastByStep.get(step.key);
+    const state: StepState = !e
+      ? "pending"
+      : e.state === "started"
+        ? "in_progress"
+        : e.state === "completed"
+          ? "completed"
+          : "failed";
+    return { step, state };
+  });
+}
+
 export function pickActiveGoodjobTone(snapshots: StepStatusSnapshot[]): GoodjobTone {
   const failed = snapshots.find((s) => s.state === "failed");
   if (failed) return "warning";

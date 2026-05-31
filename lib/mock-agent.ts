@@ -8,6 +8,15 @@ import {
   buildImageObservationText,
   evaluateImagesWithAI,
 } from "./image-evaluation-ai";
+import type { GenerationStepKey } from "./generation-steps";
+import type { AgentEventState } from "./agent-event-log";
+
+export type GenerationStepReporter = (event: {
+  stepKey: GenerationStepKey;
+  state: AgentEventState;
+  metadata?: Record<string, unknown>;
+  errorMessage?: string;
+}) => void | Promise<void>;
 
 async function resolvePhotosAndObservation(
   input: CreateReportInput,
@@ -32,17 +41,34 @@ async function resolvePhotosAndObservation(
   }
 }
 
-export async function generateReportDraft(input: CreateReportInput): Promise<Report> {
+export async function generateReportDraft(
+  input: CreateReportInput,
+  onStep?: GenerationStepReporter
+): Promise<Report> {
+  await onStep?.({ stepKey: "search_camera_frames", state: "started" });
   const photoCandidates = await searchCameraFrames(input);
+  await onStep?.({
+    stepKey: "search_camera_frames",
+    state: "completed",
+    metadata: { candidateCount: photoCandidates.length },
+  });
+
+  await onStep?.({ stepKey: "evaluate_images", state: "started" });
   const { photos, imageObservation, usedFallback } = await resolvePhotosAndObservation(
     input,
     photoCandidates
   );
+  await onStep?.({
+    stepKey: "evaluate_images",
+    state: "completed",
+    metadata: { photosUsed: photos.length, usedFallback },
+  });
 
   console.log(
     `report draft generation: photoCandidates=${photoCandidates.length}, photosUsed=${photos.length}, imageEvalFallback=${usedFallback}`
   );
 
+  await onStep?.({ stepKey: "generate_report", state: "started" });
   let content;
   if (process.env.AI_REPORT_GENERATION_ENABLED === "true") {
     try {
@@ -59,6 +85,7 @@ export async function generateReportDraft(input: CreateReportInput): Promise<Rep
   } else {
     content = generateReportContent(input, photos, imageObservation);
   }
+  await onStep?.({ stepKey: "generate_report", state: "completed" });
 
   const now = new Date().toISOString();
   const aiOutput = {

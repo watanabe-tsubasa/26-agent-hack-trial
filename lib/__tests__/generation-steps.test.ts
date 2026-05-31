@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   GENERATION_STEPS,
   deriveStepStates,
+  deriveStepStatesFromEvents,
   pickActiveGoodjobTone,
 } from "../generation-steps";
 
@@ -55,4 +56,30 @@ test("pickActiveGoodjobTone: returns step tone when in_progress", () => {
 test("pickActiveGoodjobTone: success when all completed", () => {
   const snaps = deriveStepStates("waiting_human_review", 0);
   assert.equal(pickActiveGoodjobTone(snaps), "success");
+});
+
+test("deriveStepStatesFromEvents: empty events -> all pending", () => {
+  const snaps = deriveStepStatesFromEvents([]);
+  snaps.forEach((s) => assert.equal(s.state, "pending"));
+});
+
+test("deriveStepStatesFromEvents: latest event per step wins", () => {
+  const snaps = deriveStepStatesFromEvents([
+    { stepKey: "parse_input", state: "started" },
+    { stepKey: "parse_input", state: "completed" },
+    { stepKey: "search_camera_frames", state: "started" },
+  ]);
+  assert.equal(snaps[0].state, "completed");
+  assert.equal(snaps[1].state, "in_progress");
+  assert.equal(snaps[2].state, "pending");
+});
+
+test("deriveStepStatesFromEvents: failed state propagates", () => {
+  const snaps = deriveStepStatesFromEvents([
+    { stepKey: "parse_input", state: "completed" },
+    { stepKey: "generate_report", state: "failed" },
+  ]);
+  assert.equal(snaps[0].state, "completed");
+  const generate = snaps.find((s) => s.step.key === "generate_report")!;
+  assert.equal(generate.state, "failed");
 });

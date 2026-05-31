@@ -12,10 +12,11 @@
     "seed:frames": "bun scripts/seed-frames.ts",
     "extract:frames:kanda": "bash scripts/extract-kanda-office-frames.sh",
     "seed:frames:kanda": "bun scripts/seed-kanda-office-frames.ts",
-    "test": "pnpm exec tsx --test app/reports/[id]/diff/_components/__tests__/diff-utils.test.ts app/admin/prompt-improvements/_components/__tests__/utils.test.ts lib/__tests__/prompt-improvement-processor.test.ts lib/__tests__/generation-steps.test.ts lib/__tests__/report-search.test.ts worker/__tests__/handlers.test.ts",
+    "test": "pnpm exec tsx --test app/reports/[id]/diff/_components/__tests__/diff-utils.test.ts app/admin/prompt-improvements/_components/__tests__/utils.test.ts lib/__tests__/prompt-improvement-processor.test.ts lib/__tests__/generation-steps.test.ts lib/__tests__/knowledge-improvement-steps.test.ts lib/__tests__/report-search.test.ts lib/__tests__/agent-event-log.test.ts worker/__tests__/handlers.test.ts",
     "test:coverage": "pnpm exec tsx --test --experimental-test-coverage app/reports/[id]/diff/_components/__tests__/diff-utils.test.ts"
   },
   "dependencies": {
+    "@azure/cosmos": "^4.9.3",
     "@azure/service-bus": "^7.9.5",
     "@azure/storage-blob": "^12.31.0",
     "mssql": "^12.5.4",
