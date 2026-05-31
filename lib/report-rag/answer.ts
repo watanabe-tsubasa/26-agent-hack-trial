@@ -5,7 +5,7 @@ import type { ReportSearchHit } from "./search-reports";
 const SYSTEM_PROMPT = [
   "あなたは事故報お任せグッジョくんの管理者向けRAGアシスタントです。",
   "管理者は厳密な事故報IDや内部用語を知らずに自然な日本語で質問します。",
-  "提示された根拠（事故報や集計データ）のみを使って回答してください。",
+  "直前の会話文脈を踏まえつつ、回答の根拠は今回提示された事故報や集計データのみを使ってください。",
   "根拠が無い場合は推測せず、「該当する事故報が見つかりませんでした」と伝えてください。",
   "出力は次の順序で簡潔に：",
   "1. 結論（1〜2文）",
@@ -13,9 +13,23 @@ const SYSTEM_PROMPT = [
   "3. 該当事故報（タイトル / サイト名）を箇条書き",
 ].join("\n");
 
+export type ChatHistoryItem = { role: "user" | "assistant"; content: string };
+
 type AnswerInput =
-  | { mode: "aggregate"; message: string; aggregate: FacilityAggregate[] }
-  | { mode: "search"; message: string; sources: ReportSearchHit[] };
+  | {
+      mode: "aggregate";
+      message: string;
+      aggregate: FacilityAggregate[];
+      history?: ChatHistoryItem[];
+    }
+  | {
+      mode: "search";
+      message: string;
+      sources: ReportSearchHit[];
+      history?: ChatHistoryItem[];
+    };
+
+const HISTORY_LIMIT = 6;
 
 function renderUserPrompt(input: AnswerInput): string {
   if (input.mode === "aggregate") {
@@ -47,6 +61,27 @@ function renderUserPrompt(input: AnswerInput): string {
   ].join("\n");
 }
 
+type ResponsesInputItem = {
+  role: "user" | "assistant";
+  content: { type: "input_text"; text: string }[];
+};
+
+function buildInputItems(input: AnswerInput): ResponsesInputItem[] {
+  const items: ResponsesInputItem[] = [];
+  const history = (input.history ?? []).slice(-HISTORY_LIMIT);
+  for (const h of history) {
+    items.push({
+      role: h.role,
+      content: [{ type: "input_text", text: h.content }],
+    });
+  }
+  items.push({
+    role: "user",
+    content: [{ type: "input_text", text: renderUserPrompt(input) }],
+  });
+  return items;
+}
+
 export async function generateRagAnswer(input: AnswerInput): Promise<{ answer: string }> {
   const deployment = process.env.AZURE_OPENAI_DEPLOYMENT_NAME;
   if (!deployment) throw new Error("AZURE_OPENAI_DEPLOYMENT_NAME is not set");
@@ -55,21 +90,11 @@ export async function generateRagAnswer(input: AnswerInput): Promise<{ answer: s
   const response = await client.responses.create({
     model: deployment,
     instructions: SYSTEM_PROMPT,
-    input: [
-      {
-        role: "user",
-        content: [
-          {
-            type: "input_text",
-            text: renderUserPrompt(input),
-          },
-        ],
-      },
-    ],
+    input: buildInputItems(input),
   });
 
   const answer = response.output_text?.trim() ?? "";
   return { answer };
 }
 
-export const __test__ = { renderUserPrompt };
+export const __test__ = { renderUserPrompt, buildInputItems };

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Send } from "lucide-react";
+import { MessageSquarePlus, Send } from "lucide-react";
 import { GoodjobAvatar } from "@/components/goodjob-avatar";
 import { ReindexButton } from "./ReindexButton";
 
@@ -22,6 +22,7 @@ type ChatMessage =
       text: string;
       mode?: "aggregate" | "search";
       sources?: ChatSource[];
+      isFollowUp?: boolean;
     };
 
 const SUGGESTED_QUESTIONS = [
@@ -31,6 +32,25 @@ const SUGGESTED_QUESTIONS = [
   "神田事務所で救助対応が必要だった事故は？",
 ];
 
+const HISTORY_LIMIT = 6;
+
+function buildHistoryPayload(messages: ChatMessage[]) {
+  return messages.slice(-HISTORY_LIMIT).map((m) => ({
+    role: m.role,
+    content: m.text,
+  }));
+}
+
+function findLatestAssistantSources(messages: ChatMessage[]): ChatSource[] {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const m = messages[i];
+    if (m.role === "assistant" && m.sources && m.sources.length > 0) {
+      return m.sources;
+    }
+  }
+  return [];
+}
+
 export function ReportRagChatClient() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -39,14 +59,20 @@ export function ReportRagChatClient() {
   const send = async (message: string) => {
     const text = message.trim();
     if (!text || loading) return;
-    setMessages((prev) => [...prev, { role: "user", text }]);
+    const nextMessages: ChatMessage[] = [...messages, { role: "user", text }];
+    setMessages(nextMessages);
     setInput("");
     setLoading(true);
     try {
+      const previousSources = findLatestAssistantSources(messages).map((s) => ({
+        reportId: s.reportId,
+        facilityId: s.facilityId,
+      }));
+      const history = buildHistoryPayload(messages);
       const res = await fetch("/api/admin/report-rag/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text, history, previousSources }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error ?? "回答取得に失敗しました");
@@ -57,6 +83,7 @@ export function ReportRagChatClient() {
           text: data.answer ?? "",
           mode: data.mode,
           sources: (data.sources as ChatSource[]) ?? [],
+          isFollowUp: data.isFollowUp === true,
         },
       ]);
     } catch (err) {
@@ -72,6 +99,12 @@ export function ReportRagChatClient() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetConversation = () => {
+    if (loading) return;
+    setMessages([]);
+    setInput("");
   };
 
   return (
@@ -90,6 +123,23 @@ export function ReportRagChatClient() {
       <ReindexButton />
 
       <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-slate-500">
+            {messages.length === 0
+              ? "新しい会話を開始しています"
+              : `会話 ${messages.length} 件`}
+          </p>
+          <button
+            type="button"
+            onClick={resetConversation}
+            disabled={loading || messages.length === 0}
+            className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-slate-300 hover:bg-slate-50 disabled:opacity-50"
+          >
+            <MessageSquarePlus className="w-3.5 h-3.5" />
+            新しい会話を開始
+          </button>
+        </div>
+
         {messages.length === 0 ? (
           <div className="text-sm text-slate-500">
             <p className="mb-2">以下のような質問ができます:</p>
@@ -121,6 +171,11 @@ export function ReportRagChatClient() {
                   <div className="flex gap-3">
                     <GoodjobAvatar tone="thinking" size="sm" />
                     <div className="flex-1 min-w-0">
+                      {m.isFollowUp && (
+                        <div className="mb-1.5 inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                          前回の事故報に絞って検索
+                        </div>
+                      )}
                       <div className="rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-800 whitespace-pre-wrap">
                         {m.text || "..."}
                       </div>

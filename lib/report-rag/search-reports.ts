@@ -12,18 +12,32 @@ export type ReportSearchHit = {
   distance: number;
 };
 
+export type SearchOptions = {
+  k?: number;
+  scopeReportIds?: readonly string[];
+};
+
 const DEFAULT_K = 5;
 
 export async function searchReportsByText(
   message: string,
-  k: number = DEFAULT_K
+  options: SearchOptions = {}
 ): Promise<ReportSearchHit[]> {
   const container = getReportRagContainer();
   if (!container) return [];
 
+  const k = options.k ?? DEFAULT_K;
+  const scope = options.scopeReportIds ?? [];
   const query = await embedText(message);
 
   try {
+    const scopeFilter = scope.length > 0 ? "AND ARRAY_CONTAINS(@scope, c.reportId)" : "";
+    const parameters: { name: string; value: number | number[] | string[] }[] = [
+      { name: "@k", value: k },
+      { name: "@query", value: query },
+    ];
+    if (scope.length > 0) parameters.push({ name: "@scope", value: [...scope] });
+
     const { resources } = await container.items
       .query<{
         reportId: string;
@@ -43,12 +57,10 @@ export async function searchReportsByText(
           FROM c
           WHERE c.documentType = 'accident_report'
             AND c.status = 'confirmed'
+            ${scopeFilter}
           ORDER BY VectorDistance(c.embedding, @query)
         `,
-        parameters: [
-          { name: "@k", value: k },
-          { name: "@query", value: query },
-        ],
+        parameters,
       })
       .fetchAll();
 
