@@ -69,7 +69,7 @@ export function MobileNavDrawer({ open, session, onClose }: Props) {
                     : "text-slate-700 hover:bg-slate-50"
                 }`}
               >
-                <Icon className="w-5 h-5 flex-shrink-0" strokeWidth={1.75} />
+                <Icon className="w-5 h-5 shrink-0" strokeWidth={1.75} />
                 <div className="min-w-0">
                   <div className="font-medium leading-tight">{item.label}</div>
                   <div className="text-[11px] text-slate-500 leading-tight">
