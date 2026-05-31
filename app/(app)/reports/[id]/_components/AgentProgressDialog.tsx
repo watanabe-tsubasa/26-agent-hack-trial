@@ -24,7 +24,13 @@ export function AgentProgressDialog({ steps, tone, failed, done, errorMessage }:
   return (
     <div className="w-full max-w-lg rounded-3xl border border-white/40 bg-white/70 shadow-2xl backdrop-blur-xl p-7">
       <div className="flex items-start gap-4">
-        <GoodjobAvatar tone={tone} size="lg" className="flex-shrink-0 drop-shadow" />
+        <div className="shrink-0 perspective-midrange">
+          <GoodjobAvatar
+            tone={tone}
+            size="lg"
+            className={`drop-shadow ${!failed && !done ? "animate-[spinY_2s_linear_infinite]" : ""}`}
+          />
+        </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-blue-700 tracking-wide">{GOODJOB_NAME}</p>
           <h2 className="text-base font-bold text-slate-800 mt-0.5">
@@ -45,7 +51,7 @@ export function AgentProgressDialog({ steps, tone, failed, done, errorMessage }:
       <ol className="mt-5 space-y-2.5">
         {steps.map(({ step, state }) => (
           <li key={step.key} className="flex items-center gap-3">
-            <span className="flex-shrink-0">
+            <span className="shrink-0">
               {state === "completed" ? (
                 <span className="inline-flex w-5 h-5 rounded-full bg-emerald-500 text-white items-center justify-center text-[10px]">
                   ✓

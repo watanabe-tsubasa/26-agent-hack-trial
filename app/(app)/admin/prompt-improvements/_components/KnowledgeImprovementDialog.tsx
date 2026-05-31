@@ -46,7 +46,13 @@ export function KnowledgeImprovementDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/25 p-4 backdrop-blur-sm">
       <div className="w-full max-w-2xl rounded-3xl border border-white/40 bg-white/75 p-7 shadow-2xl backdrop-blur-xl">
         <div className="flex items-start gap-4">
-          <GoodjobAvatar tone={tone} size="lg" className="shrink-0 drop-shadow" />
+          <div className="shrink-0 perspective-midrange">
+            <GoodjobAvatar
+              tone={tone}
+              size="lg"
+              className={`drop-shadow ${!failed && !done ? "animate-[spinY_2s_linear_infinite]" : ""}`}
+            />
+          </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold text-amber-700 tracking-wide">
               {KNOWLEDGE_DIALOG_LEAD}

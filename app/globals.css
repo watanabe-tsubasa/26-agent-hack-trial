@@ -16,3 +16,12 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+@keyframes spinY {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(360deg);
+  }
+}
