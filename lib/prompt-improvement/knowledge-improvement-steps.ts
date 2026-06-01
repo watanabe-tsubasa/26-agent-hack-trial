@@ -40,7 +40,7 @@ export const KNOWLEDGE_IMPROVEMENT_STEPS: readonly KnowledgeImprovementStep[] = 
     key: "prepare_review",
     label: "確認用の候補を準備しています",
     description:
-      "人間が確認・編集・採用できるように、施設ナレッジ候補を整理しています。",
+      "確認・編集・採用できるように、施設ナレッジ候補を整理しています。",
     goodjob: "success",
   },
 ] as const;

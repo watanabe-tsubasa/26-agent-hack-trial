@@ -47,7 +47,7 @@ export const GENERATION_STEPS: readonly GenerationStep[] = [
   },
   {
     key: "prepare_review",
-    label: "人間確認用の画面を準備しています",
+    label: "確認用の画面を準備しています",
     description: "AI下書きと写真台帳を確認・修正できる状態にしています。",
     goodjob: "success",
   },
