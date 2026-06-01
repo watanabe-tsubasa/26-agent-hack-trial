@@ -21,7 +21,6 @@ import {
   PROMPT_IMPROVEMENT_STATUS_COPY,
   SECTION_ACTIVE_TITLE,
   SECTION_ARCHIVED_TITLE,
-  SECTION_DRAFT_EMPTY,
   SECTION_DRAFT_HINT,
   SECTION_DRAFT_TITLE,
 } from "@/lib/prompt-improvement/knowledge-copy";
@@ -299,6 +298,21 @@ export function PromptImprovementsClient({ locationKey, siteName }: Props) {
         )}
       </div>
 
+      {!loading && latestDraft && (
+        <section className="space-y-2">
+          <h3 className="text-sm font-bold text-slate-600 uppercase tracking-wide">
+            {SECTION_DRAFT_TITLE}
+          </h3>
+          <p className="text-xs text-slate-500">{SECTION_DRAFT_HINT}</p>
+          <DraftCard
+            key={latestDraft.id}
+            override={latestDraft}
+            onSaved={handleDraftSaved}
+            onApproved={() => fetchList()}
+          />
+        </section>
+      )}
+
       <section className="space-y-2">
         <h3 className="text-sm font-bold text-slate-600 uppercase tracking-wide">
           {SECTION_ACTIVE_TITLE}
@@ -307,27 +321,6 @@ export function PromptImprovementsClient({ locationKey, siteName }: Props) {
           <div className="text-sm text-slate-500">読み込み中...</div>
         ) : (
           <ActiveBlock override={active} />
-        )}
-      </section>
-
-      <section className="space-y-2">
-        <h3 className="text-sm font-bold text-slate-600 uppercase tracking-wide">
-          {SECTION_DRAFT_TITLE}
-        </h3>
-        <p className="text-xs text-slate-500">{SECTION_DRAFT_HINT}</p>
-        {loading ? (
-          <div className="text-sm text-slate-500">読み込み中...</div>
-        ) : !latestDraft ? (
-          <div className="bg-white border border-dashed border-slate-300 rounded-xl p-6 text-center text-sm text-slate-500">
-            {SECTION_DRAFT_EMPTY}
-          </div>
-        ) : (
-          <DraftCard
-            key={latestDraft.id}
-            override={latestDraft}
-            onSaved={handleDraftSaved}
-            onApproved={() => fetchList()}
-          />
         )}
       </section>
 

@@ -1,14 +1,25 @@
+export function defaultOccurredAt(now: Date = new Date()): string {
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}T10:00`;
+}
+
 export const DEFAULT_FORM = {
-  summary: "本館3階 南側廊下で天井ボードが落下していた。",
-  occurredAt: "2025-05-20T10:15",
-  location: "本館 3階 南側廊下",
-  note: "現時点で人的被害は確認されていない。",
+  summary: "",
+  occurredAt: "",
+  location: "",
+  note: "",
   hasVictim: false,
   recoveryStatus: "未復旧",
   amountImpact: "未算定",
 };
 
 export type NewReportForm = typeof DEFAULT_FORM;
+
+export function createInitialForm(now: Date = new Date()): NewReportForm {
+  return { ...DEFAULT_FORM, occurredAt: defaultOccurredAt(now) };
+}
 
 export function validateRequired(form: NewReportForm): string | null {
   if (!form.summary || !form.occurredAt || !form.location) {

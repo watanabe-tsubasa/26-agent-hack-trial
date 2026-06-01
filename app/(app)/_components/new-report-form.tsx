@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { buildCreateReportPayload, DEFAULT_FORM, validateRequired } from "@/app/_components/new-report-form-utils";
+import { buildCreateReportPayload, createInitialForm, validateRequired } from "@/app/_components/new-report-form-utils";
 
 export function NewReportForm() {
   const router = useRouter();
-  const [form, setForm] = useState(DEFAULT_FORM);
+  const [form, setForm] = useState(createInitialForm());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -64,7 +64,7 @@ export function NewReportForm() {
           <textarea
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             rows={3}
-            placeholder="例：本館3階 南側廊下で天井ボードが落下していた。"
+            placeholder="例：万引きが発生"
             value={form.summary}
             onChange={(e) => setForm({ ...form, summary: e.target.value })}
           />
@@ -89,7 +89,7 @@ export function NewReportForm() {
             <input
               type="text"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="例：本館 3階 南側廊下"
+              placeholder="例：1階 冷凍食品売場"
               value={form.location}
               onChange={(e) => setForm({ ...form, location: e.target.value })}
             />

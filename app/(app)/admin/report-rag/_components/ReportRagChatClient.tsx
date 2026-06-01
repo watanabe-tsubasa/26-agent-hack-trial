@@ -118,7 +118,7 @@ export function ReportRagChatClient({ env }: ReportRagChatClientProps) {
       <div className="flex items-center gap-3 shrink-0">
         <GoodjobAvatar tone="investigating" size="md" />
         <div>
-          <h2 className="text-xl font-bold text-slate-800">施設管理RAG</h2>
+          <h2 className="text-xl font-bold text-slate-800">施設管理チャットボット</h2>
           <p className="text-sm text-slate-500 mt-1">
             グッジョくんに、確定済みの事故報を横断確認してもらいます。
             根拠の事故報も同時に確認できます。

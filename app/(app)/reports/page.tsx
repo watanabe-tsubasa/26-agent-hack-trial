@@ -65,7 +65,6 @@ export default async function ReportsPage({
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="text-left px-4 py-3 text-slate-600 font-medium">ID</th>
                 <th className="text-left px-4 py-3 text-slate-600 font-medium">事故概要</th>
                 <th className="text-left px-4 py-3 text-slate-600 font-medium">発生場所</th>
                 <th className="text-left px-4 py-3 text-slate-600 font-medium">発生日時</th>
@@ -80,7 +79,6 @@ export default async function ReportsPage({
                   key={report.id}
                   className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${i % 2 === 0 ? "" : "bg-slate-50/50"}`}
                 >
-                  <td className="px-4 py-3 text-slate-500 font-mono text-xs">{report.id}</td>
                   <td className="px-4 py-3 text-slate-800 max-w-xs">
                     <span className="line-clamp-2">{report.summary}</span>
                   </td>

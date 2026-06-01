@@ -48,6 +48,12 @@ const defaultDeps: WorkerDeps = {
   appendEvent: appendAgentEvent,
 };
 
+const PARSE_INPUT_MIN_MS = 1000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function stepLabel(key: GenerationStepKey): string {
   return GENERATION_STEPS.find((s) => s.key === key)?.label ?? key;
 }
@@ -102,9 +108,14 @@ export async function handleReportMessage(body: unknown, deps: WorkerDeps = defa
     await deps.updateStatus(reportId, "generating_report");
 
     currentStep = "parse_input";
+    const parseInputStartedAt = Date.now();
     await emit("parse_input", "started");
     const input = await deps.getInput(reportId);
     if (!input) throw new Error(`input not found: ${reportId}`);
+    const parseInputElapsed = Date.now() - parseInputStartedAt;
+    if (parseInputElapsed < PARSE_INPUT_MIN_MS) {
+      await sleep(PARSE_INPUT_MIN_MS - parseInputElapsed);
+    }
     await emit("parse_input", "completed");
 
     const draft = await deps.generateDraft(input, onStep);

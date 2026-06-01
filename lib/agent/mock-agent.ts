@@ -1,5 +1,11 @@
 import type { CreateReportInput, Photo, Report } from "../types";
 import { searchCameraFrames } from "../agent/camera-search";
+
+const SEARCH_CAMERA_FRAMES_MIN_MS = 4000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 import { analyzeImagesMock } from "../agent/mock-vision";
 import { generateReportContent } from "../reports/report-template";
 import { generateAccidentReportWithAI } from "../agent/accident-report-ai";
@@ -45,8 +51,13 @@ export async function generateReportDraft(
   input: CreateReportInput,
   onStep?: GenerationStepReporter
 ): Promise<Report> {
+  const searchStartedAt = Date.now();
   await onStep?.({ stepKey: "search_camera_frames", state: "started" });
   const photoCandidates = await searchCameraFrames(input);
+  const searchElapsed = Date.now() - searchStartedAt;
+  if (searchElapsed < SEARCH_CAMERA_FRAMES_MIN_MS) {
+    await sleep(SEARCH_CAMERA_FRAMES_MIN_MS - searchElapsed);
+  }
   await onStep?.({
     stepKey: "search_camera_frames",
     state: "completed",

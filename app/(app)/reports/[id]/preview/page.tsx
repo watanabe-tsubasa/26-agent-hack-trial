@@ -1,19 +1,12 @@
 import Link from "next/link";
-import type { Report } from "@/lib/types";
 import { PrintButton } from "./PrintButton";
 import { CIRCLE_NUMS, formatDate, resolvePreviewStatus } from "./_components/preview-utils";
 import { isSelectedPhoto } from "@/lib/photos/photo-selection";
-
-async function getReport(id: string): Promise<Report | null> {
-  const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-  const res = await fetch(`${base}/api/reports/${id}`, { cache: "no-store" });
-  if (!res.ok) return null;
-  return res.json();
-}
+import { getReportById } from "@/lib/reports/report-repository";
 
 export default async function PreviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const report = await getReport(id);
+  const report = await getReportById(id);
 
   if (!report) {
     return (

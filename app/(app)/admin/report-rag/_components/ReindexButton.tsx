@@ -81,7 +81,7 @@ export function ReindexButton() {
           </div>
           <div>最終更新: {formatDateTime(status?.lastIndexedAt ?? null)}</div>
           {status?.enabled === false && (
-            <div className="text-red-600 mt-1">Cosmos RAG は無効です（env 未設定）</div>
+            <div className="text-red-600 mt-1">Cosmos チャットボット連携は無効です（env 未設定）</div>
           )}
         </div>
         <div className="flex gap-2">

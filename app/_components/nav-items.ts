@@ -38,7 +38,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   },
   {
     href: "/admin/report-rag",
-    label: "施設管理RAG",
+    label: "施設管理チャットボット",
     description: "全サイト横断で事故報を確認",
     iconKey: "search",
     visibleTo: ["admin"],

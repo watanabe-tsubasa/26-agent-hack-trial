@@ -3,12 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const QUICK_LOGINS = [
-  { loginId: "kanda", password: "goodjob", label: "神田事務所サイト" },
-  { loginId: "mall", password: "goodjob", label: "イオンモール神田サイト" },
-  { loginId: "admin", password: "goodjob", label: "管理者（全施設）" },
-];
-
 export default function LoginPage() {
   const router = useRouter();
   const [loginId, setLoginId] = useState("");
@@ -47,33 +41,7 @@ export default function LoginPage() {
             className="w-24 h-24 mx-auto object-contain mb-3"
           />
           <h1 className="text-xl font-bold text-slate-800">事故報お任せグッジョくん</h1>
-          <p className="text-sm text-slate-500 mt-1">サイトを選んでログインしてください</p>
-        </div>
-
-        <div className="space-y-2">
-          {QUICK_LOGINS.map((q) => (
-            <button
-              key={q.loginId}
-              type="button"
-              disabled={submitting}
-              onClick={() => submit(q.loginId, q.password)}
-              className="w-full text-left px-4 py-3 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-colors disabled:opacity-50"
-            >
-              <div className="text-sm font-semibold text-slate-800">{q.label}</div>
-              <div className="text-xs text-slate-500 mt-0.5">
-                ID: {q.loginId} / PASS: {q.password}
-              </div>
-            </button>
-          ))}
-        </div>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-slate-200" />
-          </div>
-          <div className="relative flex justify-center text-xs">
-            <span className="bg-white px-2 text-slate-400">または手動でログイン</span>
-          </div>
+          <p className="text-sm text-slate-500 mt-1">ID / PASS を入力してください</p>
         </div>
 
         <form

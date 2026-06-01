@@ -17,7 +17,7 @@ export type KnowledgeImprovementStep = {
 export const KNOWLEDGE_IMPROVEMENT_STEPS: readonly KnowledgeImprovementStep[] = [
   {
     key: "collect_corrections",
-    label: "人間の修正履歴を確認しています",
+    label: "修正履歴を確認しています",
     description:
       "確定済み事故報の修正差分から、施設ごとに繰り返し出てくる情報を探しています。",
     goodjob: "thinking",
