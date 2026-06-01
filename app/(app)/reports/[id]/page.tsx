@@ -316,7 +316,9 @@ function PhotosTab({
         <div className="text-sm text-slate-700">
           採用: <span className={`font-bold ${overLimit ? "text-red-600" : "text-slate-900"}`}>{selectedCount}</span>
           <span className="text-slate-500"> / 8</span>
-          <span className="text-slate-400 text-xs ml-2">候補 {totalCount} 件</span>
+          {!readOnly && (
+            <span className="text-slate-400 text-xs ml-2">候補 {totalCount} 件</span>
+          )}
         </div>
         {!readOnly && (
           <div className="flex items-center gap-3">
@@ -361,7 +363,9 @@ function PhotosTab({
             <h3 className="text-sm font-bold text-slate-700 mb-3">採用写真</h3>
             {selectedPhotos.length === 0 ? (
               <div className="bg-white rounded-xl border border-slate-200 p-6 text-center text-sm text-slate-500">
-                採用された写真がありません。下の候補から「採用する」を選んでください。
+                {readOnly
+                  ? "採用写真はありません。"
+                  : "採用された写真がありません。下の候補から「採用する」を選んでください。"}
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-4">
@@ -381,7 +385,7 @@ function PhotosTab({
             )}
           </section>
 
-          {unselectedPhotos.length > 0 && (
+          {!readOnly && unselectedPhotos.length > 0 && (
             <section>
               <h3 className="text-sm font-bold text-slate-700 mb-3">未採用の候補</h3>
               <div className="grid grid-cols-2 gap-4">
