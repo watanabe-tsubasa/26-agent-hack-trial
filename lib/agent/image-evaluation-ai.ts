@@ -133,21 +133,27 @@ export function applyImageEvaluationToPhotos(
 
   const enriched = photos.map((photo) => {
     const result = resultsById.get(photo.id);
-    if (!result) return photo;
+    if (!result) return { ...photo, selected: photo.selected ?? true };
+    const selected = result.shouldUseInLedger;
     return {
       ...photo,
       caption: result.suggestedCaption || photo.caption,
       relevanceScore: result.relevanceScore,
       observedFacts: result.observedFacts,
+      selected,
+      selectionReason: selected ? result.suggestedCaption || undefined : undefined,
+      exclusionReason: !selected
+        ? result.riskNotes.join(" / ") || undefined
+        : undefined,
     };
   });
 
-  const usable = enriched.filter((photo) => {
-    const result = resultsById.get(photo.id);
-    if (!result) return true;
-    return result.shouldUseInLedger;
+  enriched.sort((a, b) => {
+    const aSel = a.selected !== false ? 0 : 1;
+    const bSel = b.selected !== false ? 0 : 1;
+    if (aSel !== bSel) return aSel - bSel;
+    return (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0);
   });
 
-  usable.sort((a, b) => (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0));
-  return usable;
+  return enriched.map((photo, idx) => ({ ...photo, candidateRank: idx + 1 }));
 }

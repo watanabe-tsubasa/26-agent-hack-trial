@@ -41,6 +41,10 @@ export type Photo = {
   caption?: string;
   relevanceScore?: number;
   observedFacts?: string[];
+  selected?: boolean;
+  candidateRank?: number;
+  selectionReason?: string;
+  exclusionReason?: string;
 };
 
 export type Feedback = {

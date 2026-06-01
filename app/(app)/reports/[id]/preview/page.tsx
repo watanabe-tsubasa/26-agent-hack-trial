@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Report } from "@/lib/types";
 import { PrintButton } from "./PrintButton";
 import { CIRCLE_NUMS, formatDate, resolvePreviewStatus } from "./_components/preview-utils";
+import { isSelectedPhoto } from "@/lib/photos/photo-selection";
 
 async function getReport(id: string): Promise<Report | null> {
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
@@ -157,8 +158,10 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
         </div>
 
         <div className="grid grid-cols-2 gap-6">
-          {Array.from({ length: 8 }).map((_, i) => {
-            const photo = report.photos[i];
+          {(() => {
+            const ledgerPhotos = report.photos.filter(isSelectedPhoto).slice(0, 8);
+            return Array.from({ length: 8 }).map((_, i) => {
+              const photo = ledgerPhotos[i];
             return (
               <div key={i} className="border-2 border-slate-300 rounded-lg overflow-hidden">
                 <div className="bg-slate-50 border-b border-slate-300 px-3 py-1.5 flex items-center gap-2">
@@ -193,7 +196,8 @@ export default async function PreviewPage({ params }: { params: Promise<{ id: st
                 )}
               </div>
             );
-          })}
+            });
+          })()}
         </div>
       </div>
     </div>

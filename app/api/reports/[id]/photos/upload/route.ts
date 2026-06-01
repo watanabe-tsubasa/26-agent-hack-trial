@@ -62,6 +62,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     capturedAt: new Date().toISOString(),
     photoLocationName,
     sourceType: "uploaded_photo",
+    selected: true,
     blobContainer: REPORT_PHOTOS_CONTAINER,
     blobName,
   };

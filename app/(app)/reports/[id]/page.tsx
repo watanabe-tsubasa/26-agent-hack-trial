@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, use } from "react";
+import { useEffect, useMemo, useRef, useState, use } from "react";
 import Link from "next/link";
 import type { Photo, Report } from "@/lib/types";
 import { EditableField } from "./_components/EditableField";
@@ -8,6 +8,8 @@ import { isProcessingStatus } from "./_components/processing-state";
 import { ProcessingScreen } from "./_components/ProcessingScreen";
 import { GoodjobAvatar } from "@/components/goodjob-avatar";
 import { GOODJOB_AFTER_CONFIRM_COPY, GOODJOB_NAME } from "@/lib/goodjob-copy";
+import { countSelectedPhotos, isSelectedPhoto } from "@/lib/photos/photo-selection";
+import { isReportDirty } from "@/lib/reports/dirty-check";
 
 // ── Report editor ─────────────────────────────────────────────────────────────
 
@@ -113,6 +115,120 @@ function ReportTab({ report, onChange }: { report: Report; onChange: (r: Report)
 
 const CIRCLE_NUMS = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"];
 
+function PhotoCard({
+  photo,
+  ledgerIndex,
+  totalSelected,
+  readOnly,
+  onSetName,
+  onToggleSelected,
+  onMove,
+}: {
+  photo: Photo;
+  ledgerIndex: number | null;
+  totalSelected: number;
+  readOnly: boolean;
+  onSetName: (id: string, name: string) => void;
+  onToggleSelected: (id: string) => void;
+  onMove: (id: string, dir: -1 | 1) => void;
+}) {
+  const selected = isSelectedPhoto(photo);
+  const ledgerLabel =
+    selected && ledgerIndex !== null
+      ? ledgerIndex < CIRCLE_NUMS.length
+        ? CIRCLE_NUMS[ledgerIndex]
+        : `${ledgerIndex + 1}枚目`
+      : "未採用";
+
+  return (
+    <div
+      className={`bg-white rounded-xl border shadow-sm overflow-hidden transition-opacity ${
+        selected ? "border-slate-200" : "border-slate-200 opacity-60"
+      }`}
+    >
+      <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-100">
+        <div className="flex items-center gap-2">
+          <span className={`font-bold ${selected ? "text-slate-700" : "text-slate-400"}`}>
+            {ledgerLabel}
+          </span>
+          {photo.sourceType === "uploaded_photo" && (
+            <span className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1.5 py-0.5">
+              現地
+            </span>
+          )}
+        </div>
+        {!readOnly && selected && ledgerIndex !== null && (
+          <div className="flex gap-1">
+            <button
+              onClick={() => onMove(photo.id, -1)}
+              disabled={ledgerIndex === 0}
+              className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-30"
+              title="上に移動"
+            >
+              ↑
+            </button>
+            <button
+              onClick={() => onMove(photo.id, 1)}
+              disabled={ledgerIndex === totalSelected - 1}
+              className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-30"
+              title="下に移動"
+            >
+              ↓
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="relative w-full h-40 bg-slate-100">
+        <img
+          src={photo.imageUrl}
+          alt={photo.photoLocationName}
+          className={`absolute inset-0 w-full h-full object-cover ${selected ? "" : "grayscale"}`}
+        />
+      </div>
+      <div className="p-3 space-y-2">
+        <div>
+          <label className="block text-xs font-semibold text-slate-500 mb-1">写真場所名称</label>
+          <input
+            type="text"
+            value={photo.photoLocationName}
+            onChange={(e) => onSetName(photo.id, e.target.value)}
+            disabled={readOnly}
+            className="w-full rounded border border-slate-200 px-2 py-1 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:bg-slate-50"
+          />
+        </div>
+        <div className="text-xs text-slate-400">
+          <div>{photo.cameraName}</div>
+          <div>{photo.capturedAt.slice(0, 16).replace("T", " ")}</div>
+        </div>
+        {selected && photo.selectionReason && (
+          <p className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-100 rounded px-2 py-1">
+            {photo.selectionReason}
+          </p>
+        )}
+        {!selected && photo.exclusionReason && (
+          <p className="text-[11px] text-slate-500 bg-slate-50 border border-slate-200 rounded px-2 py-1">
+            {photo.exclusionReason}
+          </p>
+        )}
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={() => onToggleSelected(photo.id)}
+            className={`w-full text-xs font-medium rounded px-2 py-1.5 border transition-colors ${
+              selected
+                ? "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"
+                : "bg-blue-600 text-white border-blue-700 hover:bg-blue-700"
+            }`}
+          >
+            {selected ? "除外する" : "採用する"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function PhotosTab({
   report,
   onChange,
@@ -135,15 +251,25 @@ function PhotosTab({
     onChange({ ...report, photos });
   };
 
-  const removePhoto = (id: string) => {
-    onChange({ ...report, photos: report.photos.filter((p) => p.id !== id) });
+  const toggleSelected = (id: string) => {
+    const photos = report.photos.map((p) =>
+      p.id === id ? { ...p, selected: !isSelectedPhoto(p) } : p
+    );
+    onChange({ ...report, photos });
   };
 
-  const movePhoto = (index: number, dir: -1 | 1) => {
+  const movePhoto = (id: string, dir: -1 | 1) => {
     const photos = [...report.photos];
-    const target = index + dir;
-    if (target < 0 || target >= photos.length) return;
-    [photos[index], photos[target]] = [photos[target], photos[index]];
+    const selectedIndices = photos
+      .map((p, i) => (isSelectedPhoto(p) ? i : -1))
+      .filter((i) => i >= 0);
+    const pos = selectedIndices.findIndex((i) => photos[i].id === id);
+    if (pos < 0) return;
+    const targetPos = pos + dir;
+    if (targetPos < 0 || targetPos >= selectedIndices.length) return;
+    const fromIdx = selectedIndices[pos];
+    const toIdx = selectedIndices[targetPos];
+    [photos[fromIdx], photos[toIdx]] = [photos[toIdx], photos[fromIdx]];
     onChange({ ...report, photos });
   };
 
@@ -151,10 +277,6 @@ function PhotosTab({
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    if (report.photos.length >= 8) {
-      setUploadError("写真は最大8枚までです");
-      return;
-    }
     setUploading(true);
     setUploadError("");
     try {
@@ -169,7 +291,7 @@ function PhotosTab({
         throw new Error(data?.error ?? "アップロードに失敗しました");
       }
       const photo = data as Photo;
-      onChange({ ...report, photos: [...report.photos, photo] });
+      onChange({ ...report, photos: [...report.photos, { ...photo, selected: true }] });
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "アップロードに失敗しました");
     } finally {
@@ -177,119 +299,114 @@ function PhotosTab({
     }
   };
 
-  const canUpload = !readOnly && report.photos.length < 8;
-  const slots = Array.from({ length: 8 });
+  const selectedCount = countSelectedPhotos(report.photos);
+  const totalCount = report.photos.length;
+  const overLimit = selectedCount > 8;
+
+  const selectedPhotos: Photo[] = [];
+  const unselectedPhotos: Photo[] = [];
+  for (const p of report.photos) {
+    if (isSelectedPhoto(p)) selectedPhotos.push(p);
+    else unselectedPhotos.push(p);
+  }
 
   return (
-    <div>
-      <div className="grid grid-cols-2 gap-4">
-        {slots.map((_, i) => {
-          const photo = report.photos[i];
-          return (
-            <div key={i} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-100">
-                <span className="font-bold text-slate-600">{CIRCLE_NUMS[i]}</span>
-                {photo && (
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => movePhoto(i, -1)}
-                      disabled={i === 0}
-                      className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-30"
-                      title="上に移動"
-                    >
-                      ↑
-                    </button>
-                    <button
-                      onClick={() => movePhoto(i, 1)}
-                      disabled={i === report.photos.length - 1}
-                      className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-30"
-                      title="下に移動"
-                    >
-                      ↓
-                    </button>
-                    <button
-                      onClick={() => removePhoto(photo.id)}
-                      className="p-1 text-red-400 hover:text-red-600"
-                      title="削除"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {photo ? (
-                <div>
-                  <div className="relative w-full h-40 bg-slate-100">
-                    <img
-                      src={photo.imageUrl}
-                      alt={photo.photoLocationName}
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="p-3 space-y-2">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">写真場所名称</label>
-                      <input
-                        type="text"
-                        value={photo.photoLocationName}
-                        onChange={(e) => setPhotoName(photo.id, e.target.value)}
-                        className="w-full rounded border border-slate-200 px-2 py-1 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                      />
-                    </div>
-                    <div className="text-xs text-slate-400">
-                      <div>{photo.cameraName}</div>
-                      <div>{photo.capturedAt.slice(0, 16).replace("T", " ")}</div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="h-40 flex items-center justify-center text-slate-300">
-                  <div className="text-center">
-                    <svg className="w-10 h-10 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span className="text-xs">画像なし</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between bg-white rounded-xl border border-slate-200 px-4 py-3 shadow-sm">
+        <div className="text-sm text-slate-700">
+          採用: <span className={`font-bold ${overLimit ? "text-red-600" : "text-slate-900"}`}>{selectedCount}</span>
+          <span className="text-slate-500"> / 8</span>
+          <span className="text-slate-400 text-xs ml-2">候補 {totalCount} 件</span>
+        </div>
+        {!readOnly && (
+          <div className="flex items-center gap-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleFileSelected}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-700 hover:bg-blue-800 disabled:bg-blue-300 text-white rounded-lg transition-colors"
+            >
+              {uploading ? "アップロード中..." : "現地写真を追加"}
+            </button>
+          </div>
+        )}
       </div>
 
-      {!readOnly && (
-        <div className="mt-4 flex items-center gap-3">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={handleFileSelected}
-            className="hidden"
-          />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={!canUpload || uploading}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-700 hover:bg-blue-800 disabled:bg-blue-300 text-white rounded-lg transition-colors"
-          >
-            {uploading ? "アップロード中..." : "現地写真を追加"}
-          </button>
-          {report.photos.length >= 8 && (
-            <span className="text-xs text-slate-500">写真は最大8枚です</span>
-          )}
-          {uploadError && (
-            <span className="text-xs text-red-600">{uploadError}</span>
-          )}
+      {uploadError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {uploadError}
         </div>
+      )}
+
+      {overLimit && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          写真台帳に掲載できる写真は最大8枚です。採用する写真を8枚以下にしてください。
+        </div>
+      )}
+
+      {totalCount === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-sm text-slate-500">
+          候補写真がありません。「現地写真を追加」から手元の写真をアップロードできます。
+        </div>
+      ) : (
+        <>
+          <section>
+            <h3 className="text-sm font-bold text-slate-700 mb-3">採用写真</h3>
+            {selectedPhotos.length === 0 ? (
+              <div className="bg-white rounded-xl border border-slate-200 p-6 text-center text-sm text-slate-500">
+                採用された写真がありません。下の候補から「採用する」を選んでください。
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                {selectedPhotos.map((photo, i) => (
+                  <PhotoCard
+                    key={photo.id}
+                    photo={photo}
+                    ledgerIndex={i}
+                    totalSelected={selectedPhotos.length}
+                    readOnly={readOnly}
+                    onSetName={setPhotoName}
+                    onToggleSelected={toggleSelected}
+                    onMove={movePhoto}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+
+          {unselectedPhotos.length > 0 && (
+            <section>
+              <h3 className="text-sm font-bold text-slate-700 mb-3">未採用の候補</h3>
+              <div className="grid grid-cols-2 gap-4">
+                {unselectedPhotos.map((photo) => (
+                  <PhotoCard
+                    key={photo.id}
+                    photo={photo}
+                    ledgerIndex={null}
+                    totalSelected={selectedPhotos.length}
+                    readOnly={readOnly}
+                    onSetName={setPhotoName}
+                    onToggleSelected={toggleSelected}
+                    onMove={movePhoto}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
     </div>
   );
 }
 
 function DiffTab({ report }: { report: Report }) {
-  const orig = report.originalAiOutput;
-
   if (report.feedbacks.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-500 text-sm">
@@ -353,6 +470,17 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
       });
   }, [id]);
 
+  const isDirty = useMemo(
+    () => (report && editedReport ? isReportDirty(report, editedReport) : false),
+    [report, editedReport]
+  );
+
+  const selectedPhotoCount = useMemo(
+    () => (editedReport ? countSelectedPhotos(editedReport.photos) : 0),
+    [editedReport]
+  );
+  const hasTooManyPhotos = selectedPhotoCount > 8;
+
   const handleSave = async () => {
     if (!editedReport) return;
     setSaving(true);
@@ -373,11 +501,16 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
             cameraName: p.cameraName,
             capturedAt: p.capturedAt,
             photoLocationName: p.photoLocationName,
+            sourceType: p.sourceType,
             blobContainer: p.blobContainer,
             blobName: p.blobName,
             caption: p.caption,
             relevanceScore: p.relevanceScore,
             observedFacts: p.observedFacts,
+            selected: p.selected,
+            candidateRank: p.candidateRank,
+            selectionReason: p.selectionReason,
+            exclusionReason: p.exclusionReason,
           })),
         }),
       });
@@ -429,6 +562,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
   }
 
   const isConfirmed = report.status === "confirmed";
+  const confirmDisabled = confirming || isDirty || hasTooManyPhotos;
 
   return (
     <div>
@@ -465,10 +599,16 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
               </button>
               <button
                 onClick={handleConfirm}
-                disabled={confirming}
+                disabled={confirmDisabled}
                 className="flex items-center gap-1.5 px-3 py-2 text-sm bg-green-700 hover:bg-green-800 disabled:bg-green-400 text-white rounded-lg font-medium transition-colors"
               >
-                {confirming ? "処理中..." : "この内容で確定"}
+                {confirming
+                  ? "処理中..."
+                  : isDirty
+                    ? "保存後に確定できます"
+                    : hasTooManyPhotos
+                      ? "採用写真を8枚以下に"
+                      : "この内容で確定"}
               </button>
             </>
           )}
@@ -483,7 +623,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
       {/* Save notification */}
       {saveMessage && (
         <div className="mb-4 flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm">
-          <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
           {saveMessage}
@@ -496,10 +636,22 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         </div>
       )}
 
+      {!isConfirmed && isDirty && (
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          未保存の修正があります。「修正内容を保存」を押すと確定できるようになります。
+        </div>
+      )}
+
+      {!isConfirmed && hasTooManyPhotos && (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          採用写真が {selectedPhotoCount} 枚あります。写真台帳に掲載できるのは最大 8 枚です。
+        </div>
+      )}
+
       {/* Goodjob note */}
       {!isConfirmed && (
-        <div className="mb-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-4 flex items-center gap-3">
-          <GoodjobAvatar tone="success" size="md" className="flex-shrink-0" />
+        <div className="mb-4 rounded-xl bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-200 p-4 flex items-center gap-3">
+          <GoodjobAvatar tone="success" size="md" className="shrink-0" />
           <div>
             <p className="text-sm font-medium text-blue-800">
               {GOODJOB_NAME}の下書きを確認してください
@@ -513,7 +665,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
 
       {isConfirmed && (
         <div className="mb-4 rounded-xl bg-emerald-50 border border-emerald-200 p-4 flex items-center gap-3">
-          <GoodjobAvatar tone="success" size="md" className="flex-shrink-0" />
+          <GoodjobAvatar tone="success" size="md" className="shrink-0" />
           <p className="text-sm text-emerald-800">{GOODJOB_AFTER_CONFIRM_COPY}</p>
         </div>
       )}
@@ -523,7 +675,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         {(
           [
             ["report", "事故報告書"],
-            ["photos", "写真台帳"],
+            ["photos", `写真台帳 (${selectedPhotoCount}/8)`],
             ["diff", `AI出力と修正差分${report.feedbacks.length > 0 ? ` (${report.feedbacks.length})` : ""}`],
           ] as [Tab, string][]
         ).map(([key, label]) => (

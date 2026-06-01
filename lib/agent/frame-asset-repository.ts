@@ -81,36 +81,32 @@ type TimeWindowSearchInput = {
   occurredAt: string;
   beforeSeconds: number;
   afterSeconds: number;
-  targetOffsets: number[];
+  maxCandidates: number;
   scenarioTags?: string[];
 };
 
-function pickClosestToTargets(
+export function pickByTagAndProximity(
   rows: FrameAssetRow[],
   occurredAtMs: number,
-  targetOffsets: number[]
+  scenarioTags: string[],
+  maxCandidates: number
 ): FrameAssetRow[] {
   if (rows.length === 0) return [];
-  const picked = new Set<string>();
-  const result: FrameAssetRow[] = [];
-  for (const offset of targetOffsets) {
-    const targetMs = occurredAtMs + offset * 1000;
-    let best: FrameAssetRow | null = null;
-    let bestDiff = Infinity;
-    for (const row of rows) {
-      if (picked.has(row.id)) continue;
-      const diff = Math.abs(row.captured_at.getTime() - targetMs);
-      if (diff < bestDiff) {
-        best = row;
-        bestDiff = diff;
-      }
-    }
-    if (best) {
-      picked.add(best.id);
-      result.push(best);
-    }
-  }
-  return result;
+  const tagSet = new Set(scenarioTags);
+  const scored = rows.map((row) => {
+    const tags: string[] = row.scenario_tags ? JSON.parse(row.scenario_tags) : [];
+    const matchesTag = tagSet.size > 0 && tags.some((t) => tagSet.has(t));
+    return {
+      row,
+      tagRank: matchesTag ? 0 : 1,
+      proximityMs: Math.abs(row.captured_at.getTime() - occurredAtMs),
+    };
+  });
+  scored.sort((a, b) => {
+    if (a.tagRank !== b.tagRank) return a.tagRank - b.tagRank;
+    return a.proximityMs - b.proximityMs;
+  });
+  return scored.slice(0, maxCandidates).map((s) => s.row);
 }
 
 export async function searchFrameAssetsByTimeWindow(
@@ -136,10 +132,11 @@ export async function searchFrameAssetsByTimeWindow(
       order by captured_at asc
     `);
 
-  const picked = pickClosestToTargets(
+  const picked = pickByTagAndProximity(
     result.recordset,
     occurredAtDate.getTime(),
-    input.targetOffsets
+    input.scenarioTags ?? [],
+    input.maxCandidates
   );
 
   return picked.map(rowToPhoto);

@@ -31,9 +31,9 @@ export async function searchCameraFrames(input: CreateReportInput): Promise<Phot
     return searchFrameAssetsByTimeWindow({
       facilityId: input.facilityId,
       occurredAt: input.occurredAt,
-      beforeSeconds: 12,
-      afterSeconds: 15,
-      targetOffsets: [-12, -9, -6, -3, 0, 3, 6, 9, 12, 15],
+      beforeSeconds: 60,
+      afterSeconds: 90,
+      maxCandidates: 30,
       scenarioTags: detectScenarioTags(input),
     });
   }
