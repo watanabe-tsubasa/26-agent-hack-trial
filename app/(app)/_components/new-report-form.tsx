@@ -64,7 +64,7 @@ export function NewReportForm() {
           <textarea
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             rows={3}
-            placeholder="例：万引きが発生"
+            placeholder="例：お客さまが転倒し、救急搬送された。"
             value={form.summary}
             onChange={(e) => setForm({ ...form, summary: e.target.value })}
           />
