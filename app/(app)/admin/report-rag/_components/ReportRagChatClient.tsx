@@ -116,7 +116,7 @@ export function ReportRagChatClient({ env }: ReportRagChatClientProps) {
   return (
     <div className="w-full max-w-4xl mx-auto flex-1 min-h-0 flex flex-col gap-6">
       <div className="flex items-center gap-3 shrink-0">
-        <GoodjobAvatar tone="investigating" size="md" />
+        <GoodjobAvatar tone="idle" size="md" />
         <div>
           <h2 className="text-xl font-bold text-slate-800">施設管理チャットボット</h2>
           <p className="text-sm text-slate-500 mt-1">
@@ -187,7 +187,7 @@ export function ReportRagChatClient({ env }: ReportRagChatClientProps) {
                   </div>
                 ) : (
                   <div className="flex gap-3">
-                    <GoodjobAvatar tone="thinking" size="sm" />
+                    <GoodjobAvatar tone="idle" size="sm" />
                     <div className="flex-1 min-w-0">
                       {m.isFollowUp && (
                         <div className="mb-1.5 inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
@@ -226,7 +226,7 @@ export function ReportRagChatClient({ env }: ReportRagChatClientProps) {
             ))}
             {loading && (
               <li className="flex gap-3">
-                <GoodjobAvatar tone="thinking" size="sm" />
+                <GoodjobAvatar tone="idle" size="sm" />
                 <div className="rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-500">
                   グッジョくんが事故報を確認中...
                 </div>

@@ -48,7 +48,7 @@ export function KnowledgeImprovementDialog({
         <div className="flex items-start gap-4">
           <div className="shrink-0 perspective-midrange">
             <GoodjobAvatar
-              tone={tone}
+              tone="idle"
               size="lg"
               className={`drop-shadow ${!failed && !done ? "animate-[flipYWithPause_2.2s_ease-in-out_infinite]" : ""}`}
             />

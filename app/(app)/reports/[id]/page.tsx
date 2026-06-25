@@ -655,7 +655,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
       {/* Goodjob note */}
       {!isConfirmed && (
         <div className="mb-4 rounded-xl bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-200 p-4 flex items-center gap-3">
-          <GoodjobAvatar tone="success" size="md" className="shrink-0" />
+          <GoodjobAvatar tone="idle" size="md" className="shrink-0" />
           <div>
             <p className="text-sm font-medium text-blue-800">
               {GOODJOB_NAME}の下書きを確認してください
@@ -669,7 +669,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
 
       {isConfirmed && (
         <div className="mb-4 rounded-xl bg-emerald-50 border border-emerald-200 p-4 flex items-center gap-3">
-          <GoodjobAvatar tone="success" size="md" className="shrink-0" />
+          <GoodjobAvatar tone="idle" size="md" className="shrink-0" />
           <p className="text-sm text-emerald-800">{GOODJOB_AFTER_CONFIRM_COPY}</p>
         </div>
       )}
